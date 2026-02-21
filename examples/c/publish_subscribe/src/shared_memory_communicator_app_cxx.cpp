@@ -1,0 +1,219 @@
+// Copyright (c) 2024 Contributors to the Eclipse Foundation
+//
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstring>
+#include <chrono>
+#include <csignal>
+#include <atomic>
+#include <iomanip>
+
+#if defined(_WIN32) || defined(WIN32) || defined(__WIN32__) || defined(_WIN64)
+#include <windows.h>
+#define SLEEP_MS(ms) Sleep(ms)
+#else
+#include <unistd.h>
+#define SLEEP_MS(ms) usleep((ms) * 1000)
+#endif
+
+// 引入原有的 C 语言通信器头文件
+extern "C" {
+#include "shm_communicator.h"
+}
+
+// 全局运行状态标志
+std::atomic<bool> keep_running{true};
+
+// 信号处理
+void signal_handler(int sig) {
+    std::cout << "接收到信号: " << sig << std::endl;
+    keep_running = false;
+}
+
+// 提取当前时间的纳秒
+uint64_t app_get_time_ns() {
+    auto now = std::chrono::time_point_cast<std::chrono::nanoseconds>(
+        std::chrono::system_clock::now());
+    return now.time_since_epoch().count();
+}
+
+// 订阅者的回调函数
+void app_on_receive(const char* topic, const void* data, size_t size, void* user_context) {
+    if (size >= sizeof(uint64_t)) {
+        uint64_t current_time_ns = app_get_time_ns();
+        uint64_t send_time_ns;
+        std::memcpy(&send_time_ns, data, sizeof(uint64_t));
+        
+        uint64_t latency_ns = current_time_ns - send_time_ns;
+        double latency_us = latency_ns / 1000.0;
+        
+        std::cout << "[" << topic << "] 接收到 " << size << " 字节, 延迟: " 
+                  << std::fixed << std::setprecision(2) << latency_us << " us" << std::endl;
+    } else {
+        std::cout << "[" << topic << "] 接收到 " << size << " 字节" << std::endl;
+    }
+}
+
+// 配置结构
+struct AppConfig {
+    std::vector<std::string> pub_topics;
+    std::vector<std::string> sub_topics;
+    size_t payload_size = 1024;
+    size_t interval_ms = 1000;
+    int cpu_core_id = -1;
+    std::string config_path = "/home/taijsh/ljtx/ljtx_component.toml";
+};
+
+void print_help() {
+    std::cout << "用法: shared_memory_communicator_app_cxx [options]\n"
+              << "选项:\n"
+              << "  --pub <topic>       发布到主题 (可多次使用)\n"
+              << "  --sub <topic>       订阅到主题 (可多次使用)\n"
+              << "  --size <bytes>      负载大小字节数 (默认: 1024)\n"
+              << "  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n"
+              << "  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n"
+              << "  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n"
+              << "  --help              显示本帮助信息\n";
+}
+
+AppConfig parse_args(int argc, char** argv) {
+    AppConfig config;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--pub") {
+            if (i + 1 < argc) {
+                config.pub_topics.push_back(argv[++i]);
+            } else {
+                std::cerr << "错误: --pub 需要一个有效主题参数\n";
+                std::exit(1);
+            }
+        } else if (arg == "--sub") {
+            if (i + 1 < argc) {
+                config.sub_topics.push_back(argv[++i]);
+            } else {
+                std::cerr << "错误: --sub 需要一个有效主题参数\n";
+                std::exit(1);
+            }
+        } else if (arg == "--size") {
+            if (i + 1 < argc) {
+                config.payload_size = std::stoull(argv[++i]);
+            } else {
+                std::cerr << "错误: --size 需要指定字节数\n";
+                std::exit(1);
+            }
+        } else if (arg == "--interval") {
+            if (i + 1 < argc) {
+                config.interval_ms = std::stoull(argv[++i]);
+            } else {
+                std::cerr << "错误: --interval 需要指定毫秒数\n";
+                std::exit(1);
+            }
+        } else if (arg == "--cpu") {
+            if (i + 1 < argc) {
+                config.cpu_core_id = std::stoi(argv[++i]);
+            } else {
+                std::cerr << "错误: --cpu 需要指定核心ID\n";
+                std::exit(1);
+            }
+        } else if (arg == "--config") {
+            if (i + 1 < argc) {
+                config.config_path = argv[++i];
+            } else {
+                std::cerr << "错误: --config 需要配置文件路径\n";
+                std::exit(1);
+            }
+        } else if (arg == "--help") {
+            print_help();
+            std::exit(0);
+        } else {
+            std::cerr << "未知参数: " << arg << "\n";
+            print_help();
+            std::exit(1);
+        }
+    }
+    return config;
+}
+
+int main(int argc, char** argv) {
+    AppConfig config = parse_args(argc, argv);
+
+    // 1. 创建通信器
+    shm_communicator_t* comm = shm_communicator_create();
+    if (!shm_communicator_init(comm, config.config_path.c_str(), app_on_receive, nullptr)) {
+        std::cerr << "无法初始化 SharedMemoryCommunicator\n";
+        return 1;
+    }
+    std::cout << "初始化成功\n";
+
+    // 设置信号
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
+    // 2. 注册发布者
+    for (const auto& topic : config.pub_topics) {
+        if (!shm_communicator_register_publisher(comm, topic.c_str())) {
+            std::cerr << "无法注册发布者主题: " << topic << "\n";
+            return 1;
+        }
+    }
+    if (!config.pub_topics.empty()) {
+        std::cout << "发布者注册成功\n";
+    }
+
+    // 3. 注册订阅者
+    for (const auto& topic : config.sub_topics) {
+        std::cout << "订阅者注册:" << topic << "\n";
+        if (!shm_communicator_register_subscriber(comm, topic.c_str())) {
+            std::cerr << "无法注册订阅者主题: " << topic << "\n";
+            return 1;
+        }
+        std::cout << "订阅者注册:" << topic << "成功\n";
+    }
+    if (!config.sub_topics.empty()) {
+        std::cout << "订阅者注册成功\n";
+    }
+
+    std::cout << "应用程序已启动。\n"
+              << "配置校验:\n"
+              << "  负载大小: " << config.payload_size << " 字节\n"
+              << "  间隔: " << config.interval_ms << " 毫秒\n"
+              << "  绑定 CPU 核心: " << config.cpu_core_id << "\n"
+              << "  配置路径: " << config.config_path << "\n";
+
+    // 4. 启动后台处理线程
+    if (!shm_communicator_start(comm, config.cpu_core_id)) {
+        std::cerr << "警告: 无法启动后台处理线程或平台不支持。\n";
+    }
+
+    // 创建虚拟数据负载
+    std::vector<uint8_t> dummy_data(config.payload_size);
+    for (size_t i = 0; i < config.payload_size; ++i) {
+        dummy_data[i] = static_cast<uint8_t>(i % 255);
+    }
+
+    while (keep_running) {
+        // 对所有注册的发布者发送带有当前时间戳的 Payload
+        for (const auto& topic : config.pub_topics) {
+            if (config.payload_size >= sizeof(uint64_t)) {
+                uint64_t current_time_ns = app_get_time_ns();
+                std::memcpy(dummy_data.data(), &current_time_ns, sizeof(uint64_t));
+            }
+            shm_communicator_publish(comm, topic.c_str(), dummy_data.data(), config.payload_size);
+        }
+
+        // 等待并处理事件回调
+        for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
+            shm_communicator_process_events(comm, 100);
+        }
+    }
+
+    std::cout << "应用程序正在停止...\n";
+
+    shm_communicator_destroy(comm);
+
+    return 0;
+}

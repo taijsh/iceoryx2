@@ -11,7 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 cmake_minimum_required(VERSION 3.22)
-project(example_c_publish_subscribe LANGUAGES C)
+project(example_c_publish_subscribe LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 find_package(iceoryx2-c 0.8.999 REQUIRED)
 
@@ -20,3 +25,14 @@ target_link_libraries(example_c_publisher iceoryx2-c::static-lib)
 
 add_executable(example_c_subscriber src/subscriber.c)
 target_link_libraries(example_c_subscriber iceoryx2-c::static-lib)
+
+add_executable(example_c_shared_memory_app src/shm_communicator.c src/shared_memory_communicator_app.c)
+target_link_libraries(example_c_shared_memory_app iceoryx2-c::static-lib)
+
+# 编译 shm_communicator 为动态链接库 (.so)
+add_library(shm_communicator SHARED src/shm_communicator.c)
+target_link_libraries(shm_communicator iceoryx2-c::static-lib)
+
+# 新增 C++11 执行应用，并链接上面的动态库
+add_executable(example_cxx_shared_memory_app src/shared_memory_communicator_app_cxx.cpp)
+target_link_libraries(example_cxx_shared_memory_app shm_communicator)
