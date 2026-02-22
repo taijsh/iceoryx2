@@ -12,6 +12,7 @@
 #include "shm_communicator.h"
 #include "iox2/iceoryx2.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #ifdef __linux__

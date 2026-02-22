@@ -1,0 +1,1 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/libiceoryx2_pal_configuration.rlib: /mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/configuration/build.rs /mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/configuration/src/lib.rs

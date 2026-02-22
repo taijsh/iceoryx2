@@ -1,0 +1,5 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_complex_types_subscriber-42cdc59741e5e8d9.d: examples/rust/cross_language_communication_complex_types/subscriber.rs
+
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_complex_types_subscriber-42cdc59741e5e8d9: examples/rust/cross_language_communication_complex_types/subscriber.rs
+
+examples/rust/cross_language_communication_complex_types/subscriber.rs:

@@ -1,0 +1,5 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/publish_subscribe_user_header_subscriber-9d95293aa419d895.d: examples/rust/publish_subscribe_with_user_header/subscriber.rs
+
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/publish_subscribe_user_header_subscriber-9d95293aa419d895: examples/rust/publish_subscribe_with_user_header/subscriber.rs
+
+examples/rust/publish_subscribe_with_user_header/subscriber.rs:

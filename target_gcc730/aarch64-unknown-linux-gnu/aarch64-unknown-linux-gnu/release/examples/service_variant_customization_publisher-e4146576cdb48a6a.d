@@ -1,0 +1,6 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/service_variant_customization_publisher-e4146576cdb48a6a.d: examples/rust/service_variant_customization/publisher.rs examples/rust/service_variant_customization/custom_service_variant.rs
+
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/service_variant_customization_publisher-e4146576cdb48a6a: examples/rust/service_variant_customization/publisher.rs examples/rust/service_variant_customization/custom_service_variant.rs
+
+examples/rust/service_variant_customization/publisher.rs:
+examples/rust/service_variant_customization/custom_service_variant.rs:

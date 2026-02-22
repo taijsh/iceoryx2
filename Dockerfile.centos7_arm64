@@ -1,0 +1,20 @@
+FROM --platform=linux/arm64 centos:7
+
+# Fix for CentOS 7 EOL repos
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*.repo && \
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
+
+# Clean cache and install SCL
+RUN yum clean all && \
+    yum install -y centos-release-scl-rh && \
+    echo -e "[centos-sclo-rh]\nname=CentOS-7 - SCLo rh\nbaseurl=http://vault.centos.org/altarch/7/sclo/aarch64/rh/\ngpgcheck=0\nenabled=1" > /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo && \
+    echo -e "[centos-sclo-sclo]\nname=CentOS-7 - SCLo sclo\nbaseurl=http://vault.centos.org/altarch/7/sclo/aarch64/sclo/\ngpgcheck=0\nenabled=1" > /etc/yum.repos.d/CentOS-SCLo-scl.repo && \
+    yum install -y devtoolset-7-gcc devtoolset-7-gcc-c++ make cmake && \
+    yum clean all
+
+# Setup environment to use devtoolset-7 by default
+RUN echo 'source /opt/rh/devtoolset-7/enable' >> /root/.bashrc
+ENV PATH=/opt/rh/devtoolset-7/root/usr/bin:$PATH
+
+WORKDIR /app
+CMD ["/bin/bash"]

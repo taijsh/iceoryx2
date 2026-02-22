@@ -1,0 +1,1 @@
+/opt/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc               -W -Wall -Wextra -Wpedantic -Wuninitialized -Wstrict-aliasing -Wcast-align -Wconversion      -O3 CMakeFiles/example_c_subscriber.dir/src/subscriber.c.o -o example_c_subscriber  /tmp/target_gcc730/aarch64-unknown-linux-gnu/release/libiceoryx2_ffi_c.a -lm -lpthread -ldl -lrt

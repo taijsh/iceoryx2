@@ -1,0 +1,645 @@
+=========================================================
+ Building iceoryx2 for aarch64 in Debian-gcc730 WSL  
+=========================================================
+
+[1/5] Installing build dependencies...
+Hit:1 http://security.debian.org/debian-security trixie-security InRelease
+Hit:2 http://ftp.debian.org/debian trixie-backports InRelease
+Hit:3 http://deb.debian.org/debian trixie InRelease
+Hit:4 http://deb.debian.org/debian trixie-updates InRelease
+Reading package lists...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.12).
+cmake is already the newest version (3.31.6-2).
+libclang-dev is already the newest version (1:19.0-63).
+curl is already the newest version (8.14.1-2+deb13u2).
+python3 is already the newest version (3.13.5-1).
+python3-dev is already the newest version (3.13.5-1).
+xz-utils is already the newest version (5.8.1-1).
+0 upgraded, 0 newly installed, 0 to remove and 11 not upgraded.
+
+[2/5] Checking Rust installation...
+Rust/Cargo not found. Installing Rust...
+info: downloading installer
+warn: It looks like you have an existing rustup settings file at:
+warn: /root/.rustup/settings.toml
+warn: Rustup will install the default toolchain as specified in the settings file,
+warn: instead of the one inferred from the default host triple.
+info: profile set to 'default'
+info: default host triple is x86_64-unknown-linux-gnu
+warn: Updating existing toolchain, profile choice will be ignored
+info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
+info: default toolchain set to 'stable-x86_64-unknown-linux-gnu'
+
+  stable-x86_64-unknown-linux-gnu unchanged - rustc 1.93.1 (01f6ddf75 2026-02-11)
+
+
+Rust is installed now. Great!
+
+To get started you may need to restart your current shell.
+This would reload your PATH environment variable to include
+Cargo's bin directory ($HOME/.cargo/bin).
+
+To configure your current shell, you need to source
+the corresponding env file under $HOME/.cargo.
+
+This is usually done by running one of the following (note the leading DOT):
+. "$HOME/.cargo/env"            # For sh/bash/zsh/ash/dash/pdksh
+source "$HOME/.cargo/env.fish"  # For fish
+source $"($nu.home-path)/.cargo/env.nu"  # For nushell
+
+[3/5] Adding aarch64 rust target...
+info: component 'rust-std' for target 'aarch64-unknown-linux-gnu' is up to date
+
+[4/5] Installing Linaro GCC 7.3.1 toolchain...
+
+[5/5] Building ARM64 (aarch64) version...
+   Compiling proc-macro2 v1.0.105
+   Compiling quote v1.0.43
+   Compiling unicode-ident v1.0.13
+   Compiling serde_core v1.0.228
+   Compiling serde v1.0.228
+   Compiling cfg-if v1.0.0
+   Compiling memchr v2.7.4
+   Compiling libc v0.2.180
+   Compiling shlex v1.3.0
+   Compiling either v1.13.0
+   Compiling thiserror v2.0.12
+   Compiling bitflags v2.6.0
+   Compiling glob v0.3.1
+   Compiling log v0.4.22
+   Compiling prettyplease v0.2.22
+   Compiling minimal-lexical v0.2.1
+   Compiling regex-syntax v0.8.5
+   Compiling libloading v0.8.9
+   Compiling cc v1.2.21
+   Compiling bindgen v0.72.0
+   Compiling itertools v0.13.0
+   Compiling iceoryx2-pal-concurrency-sync v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/concurrency-sync)
+   Compiling rustc-hash v2.1.1
+   Compiling iceoryx2-pal-configuration v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/configuration)
+   Compiling iceoryx2-bb-elementary-traits v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/elementary-traits)
+   Compiling clang-sys v1.8.1
+   Compiling iceoryx2-log-types v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-log/types)
+   Compiling tiny-fn v0.1.7
+   Compiling winnow v0.7.13
+   Compiling iceoryx2-bb-loggers v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/loggers)
+   Compiling iceoryx2-bb-concurrency v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/concurrency)
+   Compiling nom v7.1.3
+   Compiling iceoryx2-log v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-log/log)
+   Compiling iceoryx2-bb-elementary v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/elementary)
+   Compiling toml_writer v1.0.4
+   Compiling sha1_smol v1.0.1
+   Compiling heck v0.5.0
+   Compiling utf8parse v0.2.2
+   Compiling anstyle-parse v0.2.5
+   Compiling anstyle-query v1.1.1
+   Compiling anstyle v1.0.8
+   Compiling iceoryx2-bb-lock-free v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/lock-free)
+   Compiling is_terminal_polyfill v1.70.1
+   Compiling colorchoice v1.0.2
+   Compiling autocfg v1.4.0
+   Compiling zerocopy v0.8.25
+   Compiling syn v2.0.114
+   Compiling clap_lex v0.7.2
+   Compiling anstream v0.6.15
+   Compiling strsim v0.11.1
+   Compiling version_check v0.9.5
+   Compiling once_cell v1.21.3
+   Compiling zmij v1.0.13
+   Compiling clap_builder v4.5.19
+   Compiling regex-automata v0.4.8
+   Compiling lock_api v0.4.12
+   Compiling allocator-api2 v0.2.21
+   Compiling pin-project-lite v0.2.14
+   Compiling scopeguard v1.2.0
+   Compiling zeroize v1.8.1
+   Compiling getrandom v0.3.2
+   Compiling equivalent v1.0.1
+   Compiling itoa v1.0.11
+   Compiling spin v0.9.8
+   Compiling foldhash v0.2.0
+   Compiling ref-cast v1.0.24
+   Compiling getrandom v0.2.15
+   Compiling hashbrown v0.16.1
+   Compiling lazy_static v1.5.0
+   Compiling bytes v1.11.1
+   Compiling paste v1.0.15
+   Compiling cexpr v0.6.0
+   Compiling serde_json v1.0.149
+   Compiling tracing-core v0.1.36
+   Compiling toml_parser v1.0.4
+   Compiling anyhow v1.0.100
+   Compiling subtle v2.6.1
+   Compiling rand_core v0.6.4
+   Compiling socket2 v0.6.1
+   Compiling serde_spanned v1.0.3
+   Compiling toml_datetime v0.7.3
+   Compiling mio v1.0.3
+   Compiling regex v1.11.0
+   Compiling ahash v0.8.12
+   Compiling toml v0.9.8
+   Compiling futures-sink v0.3.31
+   Compiling futures-core v0.3.31
+   Compiling ppv-lite86 v0.2.21
+   Compiling slab v0.4.9
+   Compiling libm v0.2.15
+   Compiling zenoh-result v1.7.2
+   Compiling rand_chacha v0.3.1
+   Compiling num-traits v0.2.19
+   Compiling hashbrown v0.14.5
+   Compiling rand v0.8.5
+   Compiling rustls-pki-types v1.13.2
+   Compiling ring v0.17.14
+   Compiling typeid v1.0.3
+   Compiling dyn-clone v1.0.19
+   Compiling syn v1.0.109
+   Compiling typenum v1.18.0
+   Compiling smallvec v1.15.0
+   Compiling keyed-set v1.1.0
+   Compiling token-cell v2.0.0
+   Compiling generic-array v0.14.7
+   Compiling zenoh-macros v1.7.2
+   Compiling cfg_aliases v0.2.1
+   Compiling futures-channel v0.3.31
+   Compiling futures-task v0.3.31
+   Compiling untrusted v0.9.0
+   Compiling futures-io v0.3.31
+   Compiling pin-utils v0.1.0
+   Compiling ucd-trie v0.1.7
+   Compiling indexmap v2.13.0
+   Compiling fnv v1.0.7
+   Compiling synstructure v0.13.2
+   Compiling serde_derive_internals v0.29.1
+   Compiling ident_case v1.0.1
+   Compiling unicode-xid v0.2.6
+   Compiling rustls v0.23.36
+   Compiling darling_core v0.21.3
+   Compiling const_format_proc_macros v0.2.34
+   Compiling zenoh-collections v1.7.2
+   Compiling num-integer v0.1.46
+   Compiling humantime v2.3.0
+   Compiling const-oid v0.9.6
+   Compiling powerfmt v0.2.0
+   Compiling option-ext v0.2.0
+   Compiling time-core v0.1.4
+   Compiling num-conv v0.1.0
+   Compiling const_format v0.2.34
+   Compiling dirs-sys v0.4.1
+   Compiling time-macros v0.2.22
+   Compiling deranged v0.4.0
+   Compiling zenoh-buffers v1.7.2
+   Compiling stable_deref_trait v1.2.0
+   Compiling no-std-net v0.6.0
+   Compiling pnet_base v0.35.0
+   Compiling dirs v5.0.1
+   Compiling serde_derive v1.0.228
+   Compiling thiserror-impl v2.0.12
+   Compiling iceoryx2-bb-derive-macros v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/derive-macros)
+   Compiling enum-iterator-derive v1.4.0
+   Compiling clap_derive v4.5.18
+   Compiling ref-cast-impl v1.0.24
+   Compiling schemars_derive v1.2.0
+   Compiling displaydoc v0.2.5
+   Compiling enum-iterator v2.1.0
+   Compiling tokio-macros v2.6.0
+   Compiling tracing-attributes v0.1.31
+   Compiling cobs v0.3.0
+   Compiling futures-macro v0.3.31
+   Compiling pest v2.8.0
+   Compiling tokio v1.49.0
+   Compiling zerofrom-derive v0.1.6
+   Compiling darling_macro v0.21.3
+   Compiling yoke-derive v0.7.5
+   Compiling rusticata-macros v4.1.0
+   Compiling darling v0.21.3
+   Compiling time v0.3.41
+   Compiling clap v4.5.19
+   Compiling zerovec-derive v0.10.3
+   Compiling asn1-rs-derive v0.6.0
+   Compiling futures-util v0.3.31
+   Compiling tracing v0.1.44
+   Compiling asn1-rs-impl v0.2.0
+   Compiling crypto-common v0.1.6
+   Compiling pest_meta v2.8.0
+   Compiling zerofrom v0.1.6
+   Compiling tracing-log v0.2.0
+   Compiling matchers v0.2.0
+   Compiling yoke v0.7.5
+   Compiling rand_core v0.9.3
+   Compiling nanorand v0.7.0
+   Compiling sharded-slab v0.1.7
+   Compiling pnet_sys v0.35.0
+   Compiling thread_local v1.1.8
+   Compiling crossbeam-utils v0.8.21
+   Compiling nu-ansi-term v0.50.3
+   Compiling openssl-probe v0.1.6
+   Compiling zerovec v0.10.4
+   Compiling rustls-native-certs v0.8.1
+   Compiling flume v0.11.1
+   Compiling rand_chacha v0.9.0
+   Compiling serde_with_macros v3.16.1
+   Compiling pest_generator v2.8.0
+   Compiling unzip-n v0.1.2
+   Compiling shellexpand v3.1.1
+   Compiling validated_struct_macros v2.2.0
+   Compiling async-trait v0.1.89
+   Compiling quinn-udp v0.5.12
+   Compiling iceoryx2-bb-container v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/container)
+   Compiling postcard v1.1.3
+   Compiling schemars v1.2.0
+   Compiling pest_derive v2.8.0
+   Compiling ron v0.12.0
+   Compiling tracing-serde v0.2.0
+   Compiling uhlc v0.8.0
+   Compiling ipnetwork v0.20.0
+   Compiling tracing-subscriber v0.3.22
+   Compiling asn1-rs v0.7.1
+   Compiling json5 v0.4.1
+   Compiling pnet_datalink v0.35.0
+   Compiling oid-registry v0.8.1
+   Compiling data-encoding v2.9.0
+   Compiling zenoh-keyexpr v1.7.2
+   Compiling ryu v1.0.18
+   Compiling rustls-webpki v0.103.8
+   Compiling unsafe-libyaml v0.2.11
+   Compiling futures-executor v0.3.31
+   Compiling home v0.5.9
+   Compiling iceoryx2-pal-posix v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/posix)
+   Compiling iceoryx2-pal-os-api v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/os-api)
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.9.0
+   Compiling futures v0.3.31
+   Compiling validated_struct v2.2.0
+   Compiling serde_with v3.16.1
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling secrecy v0.8.0
+   Compiling zenoh-protocol v1.7.2
+   Compiling nonempty-collections v0.3.1
+   Compiling rand v0.9.1
+   Compiling block-buffer v0.10.4
+   Compiling num-bigint v0.4.6
+   Compiling zenoh-runtime v1.7.2
+   Compiling quinn v0.11.7
+   Compiling socket2 v0.5.9
+   Compiling num_cpus v1.17.0
+   Compiling zenoh-core v1.7.2
+   Compiling zenoh-util v1.7.2
+   Compiling digest v0.10.7
+   Compiling tokio-util v0.7.18
+   Compiling tinystr v0.7.6
+   Compiling icu_locid_transform_data v1.5.1
+   Compiling base64 v0.22.1
+   Compiling writeable v0.5.5
+   Compiling litemap v0.7.5
+   Compiling zenoh-codec v1.7.2
+   Compiling icu_provider_macros v1.5.0
+   Compiling rustls-pemfile v2.2.0
+   Compiling der-parser v10.0.0
+   Compiling icu_locid v1.5.0
+   Compiling webpki-roots v1.0.5
+   Compiling zenoh-config v1.7.2
+   Compiling cpufeatures v0.2.17
+   Compiling semver v1.0.23
+   Compiling icu_properties_data v1.5.1
+   Compiling rustix v0.38.37
+   Compiling icu_normalizer_data v1.5.1
+   Compiling icu_collections v1.5.0
+   Compiling fastrand v2.1.1
+   Compiling thiserror v1.0.64
+   Compiling x509-parser v0.18.0
+   Compiling rustc_version v0.4.1
+   Compiling thiserror-impl v1.0.64
+   Compiling icu_provider v1.5.0
+   Compiling base64ct v1.7.3
+   Compiling httparse v1.10.1
+   Compiling utf16_iter v1.0.5
+   Compiling utf8_iter v1.0.4
+   Compiling write16 v1.0.0
+   Compiling sha1 v0.10.6
+   Compiling iceoryx2-pal-print v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/print)
+   Compiling iceoryx2-bb-system-types v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/system-types)
+   Compiling pem-rfc7468 v0.7.0
+   Compiling iceoryx2-bb-print v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/print)
+   Compiling http v1.3.1
+   Compiling concurrent-queue v2.5.0
+   Compiling icu_locid_transform v1.5.0
+   Compiling der v0.7.10
+   Compiling toml_edit v0.23.9
+   Compiling nix v0.29.0
+   Compiling stabby-macros v72.1.1
+   Compiling percent-encoding v2.3.2
+   Compiling parking v2.2.1
+   Compiling iceoryx2-bb-posix v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/posix)
+   Compiling rustversion v1.0.20
+   Compiling adler2 v2.0.0
+   Compiling utf-8 v0.7.6
+   Compiling simd-adler32 v0.3.8
+   Compiling byteorder v1.5.0
+   Compiling form_urlencoded v1.2.2
+   Compiling event-listener v5.4.1
+   Compiling miniz_oxide v0.8.9
+   Compiling stabby-abi v72.1.1
+   Compiling crossbeam-epoch v0.9.18
+   Compiling inout v0.1.4
+   Compiling uuid v1.19.0
+   Compiling tungstenite v0.24.0
+   Compiling proc-macro-crate v3.4.0
+   Compiling icu_properties v1.5.1
+   Compiling siphasher v1.0.1
+   Compiling num-bigint-dig v0.8.6
+   Compiling tokio-rustls v0.26.2
+   Compiling arc-swap v1.7.1
+   Compiling phf_shared v0.13.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling cipher v0.4.4
+   Compiling spki v0.7.3
+   Compiling tls-listener v0.11.0
+   Compiling zenoh-sync v1.7.2
+   Compiling keccak v0.1.5
+   Compiling pkcs8 v0.10.2
+   Compiling tokio-tungstenite v0.24.0
+   Compiling crossbeam-queue v0.3.12
+   Compiling crossbeam-channel v0.5.15
+   Compiling num-iter v0.1.45
+   Compiling static_assertions v1.1.0
+   Compiling crc32fast v1.5.0
+   Compiling stabby v72.1.1
+   Compiling sha2-const-stable v0.1.0
+   Compiling twox-hash v1.6.3
+   Compiling pkcs1 v0.7.5
+   Compiling sha3 v0.10.8
+   Compiling aes v0.8.4
+   Compiling phf_generator v0.13.1
+   Compiling hmac v0.12.1
+   Compiling signature v2.2.0
+   Compiling crossbeam v0.8.4
+   Compiling git-version-macro v0.3.9
+   Compiling gimli v0.31.1
+   Compiling array-init v2.1.0
+   Compiling foldhash v0.1.5
+   Compiling ringbuffer-spsc v0.1.15
+   Compiling zenoh-crypto v1.7.2
+   Compiling hashbrown v0.15.2
+   Compiling phf_macros v0.13.1
+   Compiling git-version v0.3.9
+   Compiling lz4_flex v0.11.3
+   Compiling zenoh v1.7.2
+   Compiling zenoh-task v1.7.2
+   Compiling toml_datetime v0.6.8
+   Compiling serde_spanned v0.6.8
+   Compiling object v0.36.5
+   Compiling camino v1.1.9
+   Compiling fixedbitset v0.5.7
+   Compiling rsa v0.9.10
+   Compiling rustc-demangle v0.1.24
+   Compiling linux-raw-sys v0.4.14
+   Compiling phf v0.13.1
+   Compiling toml_edit v0.22.22
+   Compiling icu_normalizer v1.5.0
+   Compiling flate2 v1.1.8
+   Compiling petgraph v0.8.3
+   Compiling itertools v0.14.0
+   Compiling iceoryx2-bb-memory v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/memory)
+   Compiling iceoryx2-bb-linux v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/linux)
+   Compiling iceoryx2-cal v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-cal)
+   Compiling idna_adapter v1.2.0
+   Compiling idna v1.1.0
+   Compiling terminal_size v0.1.17
+   Compiling vec_map v0.8.2
+   Compiling unicode-width v0.1.14
+   Compiling toml v0.8.19
+   Compiling url v2.5.8
+   Compiling console v0.14.1
+   Compiling addr2line v0.24.2
+   Compiling tempfile v3.13.0
+   Compiling cargo-platform v0.1.8
+   Compiling os_info v3.8.2
+   Compiling console v0.15.10
+   Compiling dialoguer v0.8.0
+   Compiling cargo_metadata v0.18.1
+   Compiling ron v0.11.0
+   Compiling colored v2.1.0
+   Compiling cbindgen v0.29.2
+   Compiling iceoryx2-pal-testing v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-pal/testing)
+   Compiling iceoryx2-bb-conformance-test-macros v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/conformance-test-macros)
+   Compiling iceoryx2-bb-testing v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/testing)
+   Compiling iceoryx2-ffi-macros v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-ffi/ffi-macros)
+   Compiling iceoryx2-bb-threadsafe v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/threadsafe)
+   Compiling iceoryx2 v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2)
+   Compiling backtrace v0.3.74
+   Compiling benchmark-queue v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/benchmarks/queue)
+   Compiling iceoryx2-cal-conformance-tests v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-cal/conformance-tests)
+   Compiling iceoryx2-bb-trait-tests v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-bb/trait-tests)
+   Compiling better-panic v0.3.0
+   Compiling human-panic v2.0.2
+   Compiling rustls-platform-verifier v0.5.3
+   Compiling iceoryx2-services-discovery v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-services/discovery)
+   Compiling iceoryx2-tunnel-backend v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-tunnel/backend)
+   Compiling iceoryx2-userland-record-and-replay v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-userland/record-and-replay)
+   Compiling iceoryx2-tunnel-end-to-end-tests v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-tunnel/end-to-end-tests)
+   Compiling iceoryx2-conformance-tests v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2/conformance-tests)
+   Compiling quinn-proto v0.11.11
+   Compiling example v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples)
+   Compiling iceoryx2-tunnel v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-tunnel/tunnel)
+   Compiling iceoryx2-tunnel-conformance-tests v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-tunnel/conformance-tests)
+   Compiling iceoryx2-ffi-c v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-ffi/c)
+   Compiling component-tests_rust v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/component-tests/rust)
+   Compiling benchmark-event v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/benchmarks/event)
+   Compiling benchmark-publish-subscribe v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/benchmarks/publish-subscribe)
+   Compiling benchmark-request-response v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/benchmarks/request-response)
+   Compiling zenoh-link-commons v1.7.2
+   Compiling zenoh-link-tcp v1.7.2
+   Compiling zenoh-link-tls v1.7.2
+   Compiling zenoh-link-quic v1.7.2
+   Compiling zenoh-link-ws v1.7.2
+   Compiling zenoh-link-udp v1.7.2
+   Compiling zenoh-link-unixsock_stream v1.7.2
+   Compiling zenoh-link-quic_datagram v1.7.2
+   Compiling zenoh-link v1.7.2
+   Compiling zenoh-transport v1.7.2
+   Compiling zenoh-plugin-trait v1.7.2
+   Compiling iceoryx2-tunnel-zenoh v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-tunnel/zenoh)
+   Compiling iceoryx2-cli v0.8.999 (/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/iceoryx2-cli)
+    Finished `release` profile [optimized] target(s) in 5m 32s
+
+Building ARM64 (aarch64) C examples...
+-- The C compiler identification is GNU 7.3.1
+-- The CXX compiler identification is GNU 7.3.1
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /opt/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /opt/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- [i] iceoryx2-cmake-modules options:
+--   IOX2_CXX_STD_VERSION: 14 (Description: The C++ version to build iceoryx2)
+-- The package 'iceoryx2-cmake-modules' is used in source code version.
+-- [i] iceoryx2 dev setup options and params:
+--   BUILD_CXX: OFF (Description: Build C++ components, e.g. container and bindings)
+--   BUILD_EXAMPLES: ON (Description: Build examples)
+--   RUST_TARGET_TRIPLET: aarch64-unknown-linux-gnu (Description: The target triplet for cross compilation when 'RUST_BUILD_ARTIFACT_PATH' is not set, e.g. 'aarch64-unknown-linux-gnu')
+-- [i] iceoryx2 dev setup Rust feature flags (only used when 'RUST_BUILD_ARTIFACT_PATH' is not set):
+--   IOX2_FEATURE_STD: ON (Description: Build iceoryx2 with std library)
+--   IOX2_FEATURE_DEV_PERMISSIONS: OFF (Description: The permissions of all resources will be set to read, write, execute for everyone)
+--   IOX2_FEATURE_LIBC_PLATFORM: OFF (Description: A platform abstraction based on the libc crate, eliminating the need for bindgen. Only available on Linux)
+--   IOX2_FEATURE_LOGGER_STD: ON (Description: Use the std module in the logger backend)
+--   IOX2_FEATURE_LOGGER_POSIX: OFF (Description: Use the POSIX abstraction in the logger backend)
+--   IOX2_FEATURE_LOGGER_BARE_METAL: OFF (Description: Use bare metal abstractions in the logger backend)
+--   IOX2_FEATURE_LOGGER_BUFFER: OFF (Description: Sets the buffer logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_CONSOLE: ON (Description: Sets the console logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_FILE: OFF (Description: Sets the file logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_LOG: OFF (Description: Enables https://crates.io/crates/log as default logger)
+--   IOX2_FEATURE_LOGGER_TRACING: OFF (Description: Enables https://crates.io/crates/tracing as default logger)
+-- [i] iceoryx2 common options and params:
+--   BUILD_TESTING: OFF (Description: Build tests)
+--   COVERAGE: OFF (Description: Build tests with code coverage)
+--   SANITIZERS: OFF (Description: Build with undefined-behavior- and address-sanitizer)
+--   WARNING_AS_ERROR: OFF (Description: Fails if the compiler emits a warning)
+-- [i] iceoryx2-bb-cxx options:
+--   IOX2_BB_CXX_CONFIG_USE_STD_EXPECTED: OFF (Description: Use the STL 'expected' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_USE_STD_OPTIONAL: OFF (Description: Use the STL 'optional' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_USE_CUSTOM_VOCABULARY_TYPES: OFF (Description: Use custom 'optional' and 'expected' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_CUSTOM_VOCABULARY_TYPES_CMAKE_TARGET:  (Description: CMake target for custom 'optional' and 'expected')
+-- [i] iceoryx2-c options:
+--   RUST_BUILD_ARTIFACT_PATH: /tmp/target_gcc730/aarch64-unknown-linux-gnu/release (Description: The path to the folder with the Rust build artifacts)
+-- [i] iceoryx2 test options and params:
+--   USE_SYSTEM_GTEST: OFF (Description: Uses gTest from the system and fails if it is not found)
+-- The package 'iceoryx2-c' is used in source code version.
+-- Configuring done (4.3s)
+-- Generating done (4.1s)
+-- Build files have been written to: /mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/target_gcc730/aarch64/cc_build
+[  1%] Building C object examples/c/blackboard/CMakeFiles/example_c_creator.dir/src/creator.c.o
+[  3%] Linking C executable example_c_creator
+[  3%] Built target example_c_creator
+[  5%] Building C object examples/c/blackboard/CMakeFiles/example_c_opener.dir/src/opener.c.o
+[  7%] Linking C executable example_c_opener
+[  7%] Built target example_c_opener
+[  9%] Building C object examples/c/cross_language_communication_basics/CMakeFiles/example_c_cross_language_communication_basics_publisher.dir/src/publisher.c.o
+[ 10%] Linking C executable example_c_cross_language_communication_basics_publisher
+[ 10%] Built target example_c_cross_language_communication_basics_publisher
+[ 12%] Building C object examples/c/cross_language_communication_basics/CMakeFiles/example_c_cross_language_communication_basics_subscriber.dir/src/subscriber.c.o
+[ 14%] Linking C executable example_c_cross_language_communication_basics_subscriber
+[ 14%] Built target example_c_cross_language_communication_basics_subscriber
+[ 16%] Building C object examples/c/discovery/CMakeFiles/example_c_discovery.dir/src/main.c.o
+[ 18%] Linking C executable example_c_discovery
+[ 18%] Built target example_c_discovery
+[ 20%] Building C object examples/c/domains/CMakeFiles/example_c_domains_publisher.dir/src/publisher.c.o
+[ 21%] Linking C executable example_c_domains_publisher
+[ 21%] Built target example_c_domains_publisher
+[ 23%] Building C object examples/c/domains/CMakeFiles/example_c_domains_subscriber.dir/src/subscriber.c.o
+[ 25%] Linking C executable example_c_domains_subscriber
+[ 25%] Built target example_c_domains_subscriber
+[ 27%] Building C object examples/c/domains/CMakeFiles/example_c_domains_discovery.dir/src/discovery.c.o
+[ 29%] Linking C executable example_c_domains_discovery
+[ 29%] Built target example_c_domains_discovery
+[ 30%] Building C object examples/c/event/CMakeFiles/example_c_event_listener.dir/src/listener.c.o
+[ 32%] Linking C executable example_c_event_listener
+[ 32%] Built target example_c_event_listener
+[ 34%] Building C object examples/c/event/CMakeFiles/example_c_event_notifier.dir/src/notifier.c.o
+[ 36%] Linking C executable example_c_event_notifier
+[ 36%] Built target example_c_event_notifier
+[ 38%] Building C object examples/c/event_multiplexing/CMakeFiles/example_c_event_multiplexing_wait.dir/src/wait.c.o
+[ 40%] Linking C executable example_c_event_multiplexing_wait
+[ 40%] Built target example_c_event_multiplexing_wait
+[ 41%] Building C object examples/c/event_multiplexing/CMakeFiles/example_c_event_multiplexing_notifier.dir/src/notifier.c.o
+[ 43%] Linking C executable example_c_event_multiplexing_notifier
+[ 43%] Built target example_c_event_multiplexing_notifier
+[ 45%] Building C object examples/c/publish_subscribe/CMakeFiles/example_c_publisher.dir/src/publisher.c.o
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/publisher.c: In function ‘get_time_ns’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/publisher.c:29:48: warning: conversion to ‘long long unsigned int’ from ‘__syscall_slong_t {aka long int}’ may change the sign of the result [-Wsign-conversion]
+     return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+                                                ^
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/publisher.c: In function ‘main’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/publisher.c:136:47: warning: conversion to ‘long unsigned int’ from ‘int’ may change the sign of the result [-Wsign-conversion]
+         uint64_t data_size = sizeof(uint64_t) + counter * 10;
+                                               ^
+[ 47%] Linking C executable example_c_publisher
+[ 47%] Built target example_c_publisher
+[ 49%] Building C object examples/c/publish_subscribe/CMakeFiles/example_c_subscriber.dir/src/subscriber.c.o
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/subscriber.c: In function ‘get_time_ns’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/subscriber.c:29:48: warning: conversion to ‘long long unsigned int’ from ‘__syscall_slong_t {aka long int}’ may change the sign of the result [-Wsign-conversion]
+     return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+                                                ^
+[ 50%] Linking C executable example_c_subscriber
+[ 50%] Built target example_c_subscriber
+[ 52%] Building C object examples/c/publish_subscribe/CMakeFiles/example_c_shared_memory_app.dir/src/shm_communicator.c.o
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c: In function ‘shm_communicator_start’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c:411:9: warning: conversion to ‘size_t {aka long unsigned int}’ from ‘int’ may change the sign of the result [-Wsign-conversion]
+         CPU_SET(cpu_core_id, &cpuset);
+         ^~~~~~~
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c: In function ‘shm_communicator_process_events’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c:447:12: warning: conversion to ‘__useconds_t {aka unsigned int}’ from ‘uint64_t {aka long unsigned int}’ may alter its value [-Wconversion]
+     usleep(timeout_ms * 1000);
+            ^~~~~~~~~~
+[ 54%] Building C object examples/c/publish_subscribe/CMakeFiles/example_c_shared_memory_app.dir/src/shared_memory_communicator_app.c.o
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shared_memory_communicator_app.c: In function ‘app_get_time_ns’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shared_memory_communicator_app.c:36:48: warning: conversion to ‘long long unsigned int’ from ‘__syscall_slong_t {aka long int}’ may change the sign of the result [-Wsign-conversion]
+     return (uint64_t)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+                                                ^
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shared_memory_communicator_app.c: In function ‘app_on_receive’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shared_memory_communicator_app.c:47:40: warning: conversion to ‘double’ from ‘uint64_t {aka long unsigned int}’ may alter its value [-Wconversion]
+         double latency_us = latency_ns / 1000.0;
+                                        ^
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shared_memory_communicator_app.c:40:77: warning: unused parameter ‘user_context’ [-Wunused-parameter]
+ void app_on_receive(const char* topic, const void* data, size_t size, void* user_context) {
+                                                                             ^~~~~~~~~~~~
+[ 56%] Linking C executable example_c_shared_memory_app
+[ 56%] Built target example_c_shared_memory_app
+[ 58%] Building C object examples/c/publish_subscribe/CMakeFiles/shm_communicator.dir/src/shm_communicator.c.o
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c: In function ‘shm_communicator_start’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c:411:9: warning: conversion to ‘size_t {aka long unsigned int}’ from ‘int’ may change the sign of the result [-Wsign-conversion]
+         CPU_SET(cpu_core_id, &cpuset);
+         ^~~~~~~
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c: In function ‘shm_communicator_process_events’:
+/mnt/c/Users/taijsh/Desktop/shm_communicator2/iceoryx2/examples/c/publish_subscribe/src/shm_communicator.c:447:12: warning: conversion to ‘__useconds_t {aka unsigned int}’ from ‘uint64_t {aka long unsigned int}’ may alter its value [-Wconversion]
+     usleep(timeout_ms * 1000);
+            ^~~~~~~~~~
+[ 60%] Linking C shared library libshm_communicator.so
+[ 60%] Built target shm_communicator
+[ 61%] Building CXX object examples/c/publish_subscribe/CMakeFiles/example_cxx_shared_memory_app.dir/src/shared_memory_communicator_app_cxx.cpp.o
+[ 63%] Linking CXX executable example_cxx_shared_memory_app
+[ 63%] Built target example_cxx_shared_memory_app
+[ 65%] Building C object examples/c/publish_subscribe_with_user_header/CMakeFiles/example_c_with_user_header_publisher.dir/src/publisher.c.o
+[ 67%] Linking C executable example_c_with_user_header_publisher
+[ 67%] Built target example_c_with_user_header_publisher
+[ 69%] Building C object examples/c/publish_subscribe_with_user_header/CMakeFiles/example_c_with_user_header_subscriber.dir/src/subscriber.c.o
+[ 70%] Linking C executable example_c_with_user_header_subscriber
+[ 70%] Built target example_c_with_user_header_subscriber
+[ 72%] Building C object examples/c/request_response/CMakeFiles/example_c_request_response_client.dir/src/client.c.o
+[ 74%] Linking C executable example_c_request_response_client
+[ 74%] Built target example_c_request_response_client
+[ 76%] Building C object examples/c/request_response/CMakeFiles/example_c_request_response_server.dir/src/server.c.o
+[ 78%] Linking C executable example_c_request_response_server
+[ 78%] Built target example_c_request_response_server
+[ 80%] Building C object examples/c/service_attributes/CMakeFiles/example_c_service_attributes_creator.dir/src/creator.c.o
+[ 81%] Linking C executable example_c_service_attributes_creator
+[ 81%] Built target example_c_service_attributes_creator
+[ 83%] Building C object examples/c/service_attributes/CMakeFiles/example_c_service_attributes_opener.dir/src/opener.c.o
+[ 85%] Linking C executable example_c_service_attributes_opener
+[ 85%] Built target example_c_service_attributes_opener
+[ 87%] Building C object examples/c/service_attributes/CMakeFiles/example_c_service_attributes_incompatible.dir/src/incompatible.c.o
+[ 89%] Linking C executable example_c_service_attributes_incompatible
+[ 89%] Built target example_c_service_attributes_incompatible
+[ 90%] Building C object examples/c/service_types/CMakeFiles/example_c_service_types_ipc_publisher.dir/src/ipc_publisher.c.o
+[ 92%] Linking C executable example_c_service_types_ipc_publisher
+[ 92%] Built target example_c_service_types_ipc_publisher
+[ 94%] Building C object examples/c/service_types/CMakeFiles/example_c_service_types_ipc_threadsafe_subscriber.dir/src/ipc_threadsafe_subscriber.c.o
+[ 96%] Linking C executable example_c_service_types_ipc_threadsafe_subscriber
+[ 96%] Built target example_c_service_types_ipc_threadsafe_subscriber
+[ 98%] Building C object examples/c/service_types/CMakeFiles/example_c_service_types_local_pubsub.dir/src/local_pubsub.c.o
+[100%] Linking C executable example_c_service_types_local_pubsub
+[100%] Built target example_c_service_types_local_pubsub
+Copying built artifacts back to windows mount...
+
+=========================================================
+ Build successful! 
+ aarch64 binaries are in: target_gcc730/aarch64-unknown-linux-gnu/release/
+ aarch64 C examples are in: target_gcc730/aarch64/cc_build/examples/
+=========================================================

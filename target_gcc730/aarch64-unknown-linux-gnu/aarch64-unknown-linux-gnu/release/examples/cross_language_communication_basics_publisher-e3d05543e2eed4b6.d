@@ -1,0 +1,5 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_basics_publisher-e3d05543e2eed4b6.d: examples/rust/cross_language_communication_basics/publisher.rs
+
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_basics_publisher-e3d05543e2eed4b6: examples/rust/cross_language_communication_basics/publisher.rs
+
+examples/rust/cross_language_communication_basics/publisher.rs:

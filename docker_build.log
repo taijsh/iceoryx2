@@ -1,0 +1,319 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.centos7_arm64
+#1 transferring dockerfile: 1.09kB 0.1s done
+#1 WARN: FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 1)
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/centos:7
+#2 ...
+
+#3 [auth] library/centos:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/centos:7
+#2 DONE 1.9s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B 0.1s done
+#4 DONE 0.1s
+
+#5 [1/5] FROM docker.io/library/centos:7@sha256:be65f488b7764ad3638f236b7b515b3678369a5124c47b8d32916d6487418ea4
+#5 CACHED
+
+#6 [2/5] RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*.repo &&     sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
+#6 DONE 0.2s
+
+#7 [3/5] RUN yum clean all &&     yum install -y centos-release-scl-rh &&     echo -e "[centos-sclo-rh]\nname=CentOS-7 - SCLo rh\nbaseurl=http://vault.centos.org/altarch/7/sclo/aarch64/rh/\ngpgcheck=0\nenabled=1" > /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo &&     echo -e "[centos-sclo-sclo]\nname=CentOS-7 - SCLo sclo\nbaseurl=http://vault.centos.org/altarch/7/sclo/aarch64/sclo/\ngpgcheck=0\nenabled=1" > /etc/yum.repos.d/CentOS-SCLo-scl.repo &&     yum install -y devtoolset-7-gcc devtoolset-7-gcc-c++ make cmake &&     yum clean all
+#7 1.229 Loaded plugins: fastestmirror, ovl
+#7 1.959 Cleaning repos: base extras updates
+#7 3.165 Loaded plugins: fastestmirror, ovl
+#7 3.851 Determining fastest mirrors
+#7 18.49 Resolving Dependencies
+#7 18.49 --> Running transaction check
+#7 18.49 ---> Package centos-release-scl-rh.noarch 0:2-3.el7.centos will be installed
+#7 20.49 --> Finished Dependency Resolution
+#7 20.54 
+#7 20.54 Dependencies Resolved
+#7 20.55 
+#7 20.55 ================================================================================
+#7 20.55  Package                    Arch        Version               Repository   Size
+#7 20.55 ================================================================================
+#7 20.55 Installing:
+#7 20.55  centos-release-scl-rh      noarch      2-3.el7.centos        extras       12 k
+#7 20.55 
+#7 20.55 Transaction Summary
+#7 20.55 ================================================================================
+#7 20.55 Install  1 Package
+#7 20.55 
+#7 20.55 Total download size: 12 k
+#7 20.55 Installed size: 20 k
+#7 20.55 Downloading packages:
+#7 21.96 warning: /var/cache/yum/aarch64/7/extras/packages/centos-release-scl-rh-2-3.el7.centos.noarch.rpm: Header V3 RSA/SHA256 Signature, key ID f4a80eb5: NOKEY
+#7 21.96 Public key for centos-release-scl-rh-2-3.el7.centos.noarch.rpm is not installed
+#7 22.00 Retrieving key from file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+#7 22.07 Importing GPG key 0xF4A80EB5:
+#7 22.07  Userid     : "CentOS-7 Key (CentOS 7 Official Signing Key) <security@centos.org>"
+#7 22.07  Fingerprint: 6341 ab27 53d7 8a78 a7c2 7bb1 24c6 a8a7 f4a8 0eb5
+#7 22.07  Package    : centos-release-7-9.2009.0.el7.centos.aarch64 (@instCentOS)
+#7 22.07  From       : /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+#7 22.10 Retrieving key from file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7-aarch64
+#7 22.12 Importing GPG key 0x305D49D6:
+#7 22.12  Userid     : "CentOS AltArch SIG - AArch64 (http://wiki.centos.org/SpecialInterestGroup/AltArch/AArch64) <security@centos.org>"
+#7 22.12  Fingerprint: ef8f 3ca6 6efd f32b 36cd adf7 6c7c b6ef 305d 49d6
+#7 22.12  Package    : centos-release-7-9.2009.0.el7.centos.aarch64 (@instCentOS)
+#7 22.12  From       : /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7-aarch64
+#7 22.15 Running transaction check
+#7 22.16 Running transaction test
+#7 22.17 Transaction test succeeded
+#7 22.18 Running transaction
+#7 22.28   Installing : centos-release-scl-rh-2-3.el7.centos.noarch                  1/1 
+#7 22.32   Verifying  : centos-release-scl-rh-2-3.el7.centos.noarch                  1/1 
+#7 22.49 
+#7 22.49 Installed:
+#7 22.49   centos-release-scl-rh.noarch 0:2-3.el7.centos                                 
+#7 22.49 
+#7 22.49 Complete!
+#7 23.69 Loaded plugins: fastestmirror, ovl
+#7 24.39 Loading mirror speeds from cached hostfile
+#7 32.52 Resolving Dependencies
+#7 32.52 --> Running transaction check
+#7 32.52 ---> Package cmake.aarch64 0:2.8.12.2-2.el7 will be installed
+#7 32.61 --> Processing Dependency: libarchive.so.13()(64bit) for package: cmake-2.8.12.2-2.el7.aarch64
+#7 34.14 ---> Package devtoolset-7-gcc.aarch64 0:7.3.1-5.16.el7 will be installed
+#7 34.15 --> Processing Dependency: devtoolset-7-binutils >= 2.22.52.0.1 for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.18 --> Processing Dependency: glibc-devel >= 2.2.90-12 for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.22 --> Processing Dependency: libgomp >= 4.4.4-13 for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.24 --> Processing Dependency: devtoolset-7-runtime for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.25 --> Processing Dependency: libmpc.so.3()(64bit) for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.27 --> Processing Dependency: libmpfr.so.4()(64bit) for package: devtoolset-7-gcc-7.3.1-5.16.el7.aarch64
+#7 34.27 ---> Package devtoolset-7-gcc-c++.aarch64 0:7.3.1-5.16.el7 will be installed
+#7 34.28 --> Processing Dependency: devtoolset-7-libstdc++-devel = 7.3.1-5.16.el7 for package: devtoolset-7-gcc-c++-7.3.1-5.16.el7.aarch64
+#7 34.30 ---> Package make.aarch64 1:3.82-24.el7 will be installed
+#7 34.30 --> Running transaction check
+#7 34.30 ---> Package devtoolset-7-binutils.aarch64 0:2.28-11.el7 will be installed
+#7 34.32 ---> Package devtoolset-7-libstdc++-devel.aarch64 0:7.3.1-5.16.el7 will be installed
+#7 34.32 ---> Package devtoolset-7-runtime.aarch64 0:7.1-4.el7 will be installed
+#7 34.33 --> Processing Dependency: scl-utils >= 20120927-11 for package: devtoolset-7-runtime-7.1-4.el7.aarch64
+#7 34.34 --> Processing Dependency: /usr/sbin/restorecon for package: devtoolset-7-runtime-7.1-4.el7.aarch64
+#7 34.36 --> Processing Dependency: /usr/sbin/restorecon for package: devtoolset-7-runtime-7.1-4.el7.aarch64
+#7 34.36 --> Processing Dependency: /usr/sbin/semanage for package: devtoolset-7-runtime-7.1-4.el7.aarch64
+#7 34.37 --> Processing Dependency: /usr/sbin/semanage for package: devtoolset-7-runtime-7.1-4.el7.aarch64
+#7 34.37 ---> Package glibc-devel.aarch64 0:2.17-326.el7_9.3 will be installed
+#7 34.40 --> Processing Dependency: glibc-headers = 2.17-326.el7_9.3 for package: glibc-devel-2.17-326.el7_9.3.aarch64
+#7 34.42 --> Processing Dependency: glibc = 2.17-326.el7_9.3 for package: glibc-devel-2.17-326.el7_9.3.aarch64
+#7 34.48 --> Processing Dependency: glibc-headers for package: glibc-devel-2.17-326.el7_9.3.aarch64
+#7 34.49 ---> Package libarchive.aarch64 0:3.1.2-14.el7_7 will be installed
+#7 34.54 --> Processing Dependency: liblzo2.so.2()(64bit) for package: libarchive-3.1.2-14.el7_7.aarch64
+#7 34.55 ---> Package libgomp.aarch64 0:4.8.5-44.el7 will be installed
+#7 34.56 ---> Package libmpc.aarch64 0:1.0.1-3.el7 will be installed
+#7 34.57 ---> Package mpfr.aarch64 0:3.1.1-4.el7 will be installed
+#7 34.58 --> Running transaction check
+#7 34.58 ---> Package glibc.aarch64 0:2.17-317.el7 will be updated
+#7 34.60 --> Processing Dependency: glibc = 2.17-317.el7 for package: glibc-common-2.17-317.el7.aarch64
+#7 34.61 ---> Package glibc.aarch64 0:2.17-326.el7_9.3 will be an update
+#7 34.62 ---> Package glibc-headers.aarch64 0:2.17-326.el7_9.3 will be installed
+#7 34.63 --> Processing Dependency: kernel-headers >= 2.2.1 for package: glibc-headers-2.17-326.el7_9.3.aarch64
+#7 34.65 --> Processing Dependency: kernel-headers for package: glibc-headers-2.17-326.el7_9.3.aarch64
+#7 34.65 ---> Package lzo.aarch64 0:2.06-8.el7 will be installed
+#7 34.65 ---> Package policycoreutils.aarch64 0:2.5-34.el7 will be installed
+#7 34.70 --> Processing Dependency: libselinux-utils >= 2.5-14 for package: policycoreutils-2.5-34.el7.aarch64
+#7 34.71 ---> Package policycoreutils-python.aarch64 0:2.5-34.el7 will be installed
+#7 34.75 --> Processing Dependency: setools-libs >= 3.3.8-4 for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.76 --> Processing Dependency: libsemanage-python >= 2.5-14 for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.77 --> Processing Dependency: audit-libs-python >= 2.1.3-4 for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.78 --> Processing Dependency: python-IPy for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.79 --> Processing Dependency: libselinux-python for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.80 --> Processing Dependency: libqpol.so.1(VERS_1.4)(64bit) for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.80 --> Processing Dependency: libqpol.so.1(VERS_1.2)(64bit) for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.80 --> Processing Dependency: libcgroup for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.81 --> Processing Dependency: libapol.so.4(VERS_4.0)(64bit) for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.82 --> Processing Dependency: checkpolicy for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.83 --> Processing Dependency: libqpol.so.1()(64bit) for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.83 --> Processing Dependency: libapol.so.4()(64bit) for package: policycoreutils-python-2.5-34.el7.aarch64
+#7 34.83 ---> Package scl-utils.aarch64 0:20130529-19.el7 will be installed
+#7 34.84 --> Running transaction check
+#7 34.84 ---> Package audit-libs-python.aarch64 0:2.8.5-4.el7 will be installed
+#7 34.85 ---> Package checkpolicy.aarch64 0:2.5-8.el7 will be installed
+#7 34.85 ---> Package glibc-common.aarch64 0:2.17-317.el7 will be updated
+#7 34.86 ---> Package glibc-common.aarch64 0:2.17-326.el7_9.3 will be an update
+#7 34.87 ---> Package kernel-headers.aarch64 0:4.18.0-348.20.1.el7 will be installed
+#7 34.87 ---> Package libcgroup.aarch64 0:0.41-21.el7 will be installed
+#7 34.89 ---> Package libselinux-python.aarch64 0:2.5-15.el7 will be installed
+#7 34.90 ---> Package libselinux-utils.aarch64 0:2.5-15.el7 will be installed
+#7 34.90 ---> Package libsemanage-python.aarch64 0:2.5-14.el7 will be installed
+#7 34.91 ---> Package python-IPy.noarch 0:0.75-6.el7 will be installed
+#7 34.91 ---> Package setools-libs.aarch64 0:3.3.8-4.el7 will be installed
+#7 36.36 --> Finished Dependency Resolution
+#7 36.55 
+#7 36.55 Dependencies Resolved
+#7 36.60 
+#7 36.60 ================================================================================
+#7 36.60  Package                      Arch    Version              Repository      Size
+#7 36.60 ================================================================================
+#7 36.60 Installing:
+#7 36.60  cmake                        aarch64 2.8.12.2-2.el7       base           6.8 M
+#7 36.60  devtoolset-7-gcc             aarch64 7.3.1-5.16.el7       centos-sclo-rh  23 M
+#7 36.60  devtoolset-7-gcc-c++         aarch64 7.3.1-5.16.el7       centos-sclo-rh 9.5 M
+#7 36.60  make                         aarch64 1:3.82-24.el7        base           415 k
+#7 36.60 Installing for dependencies:
+#7 36.60  audit-libs-python            aarch64 2.8.5-4.el7          base            73 k
+#7 36.60  checkpolicy                  aarch64 2.5-8.el7            base           275 k
+#7 36.60  devtoolset-7-binutils        aarch64 2.28-11.el7          centos-sclo-rh 5.5 M
+#7 36.60  devtoolset-7-libstdc++-devel aarch64 7.3.1-5.16.el7       centos-sclo-rh 2.6 M
+#7 36.60  devtoolset-7-runtime         aarch64 7.1-4.el7            centos-sclo-rh  19 k
+#7 36.60  glibc-devel                  aarch64 2.17-326.el7_9.3     updates        1.1 M
+#7 36.60  glibc-headers                aarch64 2.17-326.el7_9.3     updates        674 k
+#7 36.60  kernel-headers               aarch64 4.18.0-348.20.1.el7  updates        8.2 M
+#7 36.60  libarchive                   aarch64 3.1.2-14.el7_7       base           294 k
+#7 36.60  libcgroup                    aarch64 0.41-21.el7          base            63 k
+#7 36.60  libgomp                      aarch64 4.8.5-44.el7         base           155 k
+#7 36.60  libmpc                       aarch64 1.0.1-3.el7          base            49 k
+#7 36.60  libselinux-python            aarch64 2.5-15.el7           base           222 k
+#7 36.60  libselinux-utils             aarch64 2.5-15.el7           base           154 k
+#7 36.60  libsemanage-python           aarch64 2.5-14.el7           base           109 k
+#7 36.60  lzo                          aarch64 2.06-8.el7           base            52 k
+#7 36.60  mpfr                         aarch64 3.1.1-4.el7          base           198 k
+#7 36.60  policycoreutils              aarch64 2.5-34.el7           base           916 k
+#7 36.60  policycoreutils-python       aarch64 2.5-34.el7           base           456 k
+#7 36.60  python-IPy                   noarch  0.75-6.el7           base            32 k
+#7 36.60  scl-utils                    aarch64 20130529-19.el7      base            24 k
+#7 36.60  setools-libs                 aarch64 3.3.8-4.el7          base           567 k
+#7 36.60 Updating for dependencies:
+#7 36.60  glibc                        aarch64 2.17-326.el7_9.3     updates        3.6 M
+#7 36.60  glibc-common                 aarch64 2.17-326.el7_9.3     updates         12 M
+#7 36.60 
+#7 36.60 Transaction Summary
+#7 36.60 ================================================================================
+#7 36.60 Install  4 Packages (+22 Dependent packages)
+#7 36.60 Upgrade             (  2 Dependent packages)
+#7 36.60 
+#7 36.61 Total download size: 77 M
+#7 36.61 Downloading packages:
+#7 36.62 Delta RPMs disabled because /usr/bin/applydeltarpm not installed.
+#7 62.01 --------------------------------------------------------------------------------
+#7 62.01 Total                                              3.0 MB/s |  77 MB  00:25     
+#7 62.30 Running transaction check
+#7 62.98 Running transaction test
+#7 63.49 Transaction test succeeded
+#7 63.49 Running transaction
+#7 72.09   Updating   : glibc-common-2.17-326.el7_9.3.aarch64                       1/30 
+#7 74.11   Updating   : glibc-2.17-326.el7_9.3.aarch64                              2/30 
+#7 74.77   Installing : mpfr-3.1.1-4.el7.aarch64                                    3/30 
+#7 75.28   Installing : libmpc-1.0.1-3.el7.aarch64                                  4/30 
+#7 75.84   Installing : libselinux-utils-2.5-15.el7.aarch64                         5/30 
+#7 76.19   Installing : policycoreutils-2.5-34.el7.aarch64                          6/30 
+#7 76.34   Installing : checkpolicy-2.5-8.el7.aarch64                               7/30 
+#7 76.40   Installing : libsemanage-python-2.5-14.el7.aarch64                       8/30 
+#7 76.48   Installing : libselinux-python-2.5-15.el7.aarch64                        9/30 
+#7 76.52   Installing : scl-utils-20130529-19.el7.aarch64                          10/30 
+#7 76.56   Installing : lzo-2.06-8.el7.aarch64                                     11/30 
+#7 77.16   Installing : libarchive-3.1.2-14.el7_7.aarch64                          12/30 
+#7 77.68   Installing : audit-libs-python-2.8.5-4.el7.aarch64                      13/30 
+#7 78.36   Installing : libcgroup-0.41-21.el7.aarch64                              14/30 
+#7 78.90   Installing : libgomp-4.8.5-44.el7.aarch64                               15/30 
+#7 79.70   Installing : setools-libs-3.3.8-4.el7.aarch64                           16/30 
+#7 81.15   Installing : kernel-headers-4.18.0-348.20.1.el7.aarch64                 17/30 
+#7 82.13   Installing : glibc-headers-2.17-326.el7_9.3.aarch64                     18/30 
+#7 82.36   Installing : glibc-devel-2.17-326.el7_9.3.aarch64                       19/30 
+#7 82.97   Installing : python-IPy-0.75-6.el7.noarch                               20/30 
+#7 83.18   Installing : policycoreutils-python-2.5-34.el7.aarch64                  21/30 
+#7 83.28   Installing : devtoolset-7-runtime-7.1-4.el7.aarch64                     22/30 
+#7 84.44 ValueError: SELinux policy is not managed or store cannot be accessed.
+#7 85.85   Installing : devtoolset-7-libstdc++-devel-7.3.1-5.16.el7.aarch64        23/30 
+#7 87.85   Installing : devtoolset-7-binutils-2.28-11.el7.aarch64                  24/30 
+#7 88.66 install-info: No such file or directory for /opt/rh/devtoolset-7/root/usr/share/info/as.info.gz
+#7 88.66 install-info: No such file or directory for /opt/rh/devtoolset-7/root/usr/share/info/binutils.info.gz
+#7 88.66 install-info: No such file or directory for /opt/rh/devtoolset-7/root/usr/share/info/gprof.info.gz
+#7 88.66 install-info: No such file or directory for /opt/rh/devtoolset-7/root/usr/share/info/ld.info.gz
+#7 94.37   Installing : devtoolset-7-gcc-7.3.1-5.16.el7.aarch64                    25/30 
+#7 97.23   Installing : devtoolset-7-gcc-c++-7.3.1-5.16.el7.aarch64                26/30 
+#7 99.90   Installing : cmake-2.8.12.2-2.el7.aarch64                               27/30 
+#7 100.1   Installing : 1:make-3.82-24.el7.aarch64                                 28/30 
+#7 100.6   Cleanup    : glibc-common-2.17-317.el7.aarch64                          29/30 
+#7 100.7   Cleanup    : glibc-2.17-317.el7.aarch64                                 30/30 
+#7 101.4   Verifying  : devtoolset-7-libstdc++-devel-7.3.1-5.16.el7.aarch64         1/30 
+#7 101.4   Verifying  : glibc-2.17-326.el7_9.3.aarch64                              2/30 
+#7 101.4   Verifying  : libselinux-utils-2.5-15.el7.aarch64                         3/30 
+#7 101.5   Verifying  : libarchive-3.1.2-14.el7_7.aarch64                           4/30 
+#7 101.5   Verifying  : glibc-devel-2.17-326.el7_9.3.aarch64                        5/30 
+#7 101.5   Verifying  : devtoolset-7-runtime-7.1-4.el7.aarch64                      6/30 
+#7 101.6   Verifying  : 1:make-3.82-24.el7.aarch64                                  7/30 
+#7 101.6   Verifying  : checkpolicy-2.5-8.el7.aarch64                               8/30 
+#7 101.6   Verifying  : devtoolset-7-binutils-2.28-11.el7.aarch64                   9/30 
+#7 101.6   Verifying  : libsemanage-python-2.5-14.el7.aarch64                      10/30 
+#7 101.7   Verifying  : python-IPy-0.75-6.el7.noarch                               11/30 
+#7 101.7   Verifying  : policycoreutils-2.5-34.el7.aarch64                         12/30 
+#7 101.7   Verifying  : libselinux-python-2.5-15.el7.aarch64                       13/30 
+#7 101.8   Verifying  : scl-utils-20130529-19.el7.aarch64                          14/30 
+#7 101.8   Verifying  : mpfr-3.1.1-4.el7.aarch64                                   15/30 
+#7 101.8   Verifying  : devtoolset-7-gcc-c++-7.3.1-5.16.el7.aarch64                16/30 
+#7 101.8   Verifying  : glibc-headers-2.17-326.el7_9.3.aarch64                     17/30 
+#7 101.9   Verifying  : libmpc-1.0.1-3.el7.aarch64                                 18/30 
+#7 101.9   Verifying  : lzo-2.06-8.el7.aarch64                                     19/30 
+#7 101.9   Verifying  : audit-libs-python-2.8.5-4.el7.aarch64                      20/30 
+#7 102.0   Verifying  : cmake-2.8.12.2-2.el7.aarch64                               21/30 
+#7 102.0   Verifying  : devtoolset-7-gcc-7.3.1-5.16.el7.aarch64                    22/30 
+#7 102.0   Verifying  : glibc-common-2.17-326.el7_9.3.aarch64                      23/30 
+#7 102.0   Verifying  : libcgroup-0.41-21.el7.aarch64                              24/30 
+#7 102.1   Verifying  : kernel-headers-4.18.0-348.20.1.el7.aarch64                 25/30 
+#7 102.2   Verifying  : libgomp-4.8.5-44.el7.aarch64                               26/30 
+#7 102.2   Verifying  : setools-libs-3.3.8-4.el7.aarch64                           27/30 
+#7 102.3   Verifying  : policycoreutils-python-2.5-34.el7.aarch64                  28/30 
+#7 102.3   Verifying  : glibc-2.17-317.el7.aarch64                                 29/30 
+#7 102.3   Verifying  : glibc-common-2.17-317.el7.aarch64                          30/30 
+#7 102.5 
+#7 102.5 Installed:
+#7 102.5   cmake.aarch64 0:2.8.12.2-2.el7                                                
+#7 102.5   devtoolset-7-gcc.aarch64 0:7.3.1-5.16.el7                                     
+#7 102.5   devtoolset-7-gcc-c++.aarch64 0:7.3.1-5.16.el7                                 
+#7 102.5   make.aarch64 1:3.82-24.el7                                                    
+#7 102.5 
+#7 102.5 Dependency Installed:
+#7 102.5   audit-libs-python.aarch64 0:2.8.5-4.el7                                       
+#7 102.5   checkpolicy.aarch64 0:2.5-8.el7                                               
+#7 102.5   devtoolset-7-binutils.aarch64 0:2.28-11.el7                                   
+#7 102.5   devtoolset-7-libstdc++-devel.aarch64 0:7.3.1-5.16.el7                         
+#7 102.5   devtoolset-7-runtime.aarch64 0:7.1-4.el7                                      
+#7 102.5   glibc-devel.aarch64 0:2.17-326.el7_9.3                                        
+#7 102.5   glibc-headers.aarch64 0:2.17-326.el7_9.3                                      
+#7 102.5   kernel-headers.aarch64 0:4.18.0-348.20.1.el7                                  
+#7 102.5   libarchive.aarch64 0:3.1.2-14.el7_7                                           
+#7 102.5   libcgroup.aarch64 0:0.41-21.el7                                               
+#7 102.5   libgomp.aarch64 0:4.8.5-44.el7                                                
+#7 102.5   libmpc.aarch64 0:1.0.1-3.el7                                                  
+#7 102.5   libselinux-python.aarch64 0:2.5-15.el7                                        
+#7 102.5   libselinux-utils.aarch64 0:2.5-15.el7                                         
+#7 102.5   libsemanage-python.aarch64 0:2.5-14.el7                                       
+#7 102.5   lzo.aarch64 0:2.06-8.el7                                                      
+#7 102.5   mpfr.aarch64 0:3.1.1-4.el7                                                    
+#7 102.5   policycoreutils.aarch64 0:2.5-34.el7                                          
+#7 102.5   policycoreutils-python.aarch64 0:2.5-34.el7                                   
+#7 102.5   python-IPy.noarch 0:0.75-6.el7                                                
+#7 102.5   scl-utils.aarch64 0:20130529-19.el7                                           
+#7 102.5   setools-libs.aarch64 0:3.3.8-4.el7                                            
+#7 102.5 
+#7 102.5 Dependency Updated:
+#7 102.5   glibc.aarch64 0:2.17-326.el7_9.3    glibc-common.aarch64 0:2.17-326.el7_9.3   
+#7 102.5 
+#7 102.5 Complete!
+#7 103.7 Loaded plugins: fastestmirror, ovl
+#7 104.4 Cleaning repos: base centos-sclo-rh centos-sclo-sclo extras updates
+#7 104.4 Cleaning up list of fastest mirrors
+#7 DONE 104.7s
+
+#8 [4/5] RUN echo 'source /opt/rh/devtoolset-7/enable' >> /root/.bashrc
+#8 DONE 0.1s
+
+#9 [5/5] WORKDIR /app
+#9 DONE 0.0s
+
+#10 exporting to image
+#10 exporting layers
+#10 exporting layers 0.8s done
+#10 writing image sha256:8631ef5e526cdf8bd996fa42af71cf8f7ddda3ae343dcc8d38b12e43c504e321 done
+#10 naming to docker.io/library/centos7-arm64-gcc7 done
+#10 DONE 0.8s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - FromPlatformFlagConstDisallowed: FROM --platform flag should not use constant value "linux/arm64" (line 1)

@@ -1,0 +1,5 @@
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_container_subscriber-4ad6f48c5b991c88.d: examples/rust/cross_language_communication_container/subscriber.rs
+
+/tmp/target_gcc730/aarch64-unknown-linux-gnu/release/examples/cross_language_communication_container_subscriber-4ad6f48c5b991c88: examples/rust/cross_language_communication_container/subscriber.rs
+
+examples/rust/cross_language_communication_container/subscriber.rs:

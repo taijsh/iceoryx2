@@ -1,0 +1,518 @@
+-- [i] iceoryx2-cmake-modules options:
+--   IOX2_CXX_STD_VERSION: 14 (Description: The C++ version to build iceoryx2)
+-- [i] iceoryx2 dev setup options and params:
+--   BUILD_CXX: ON (Description: Build C++ components, e.g. container and bindings)
+--   BUILD_EXAMPLES: ON (Description: Build examples)
+--   RUST_TARGET_TRIPLET:  (Description: The target triplet for cross compilation when 'RUST_BUILD_ARTIFACT_PATH' is not set, e.g. 'aarch64-unknown-linux-gnu')
+-- [i] iceoryx2 dev setup Rust feature flags (only used when 'RUST_BUILD_ARTIFACT_PATH' is not set):
+--   IOX2_FEATURE_STD: ON (Description: Build iceoryx2 with std library)
+--   IOX2_FEATURE_DEV_PERMISSIONS: OFF (Description: The permissions of all resources will be set to read, write, execute for everyone)
+--   IOX2_FEATURE_LIBC_PLATFORM: OFF (Description: A platform abstraction based on the libc crate, eliminating the need for bindgen. Only available on Linux)
+--   IOX2_FEATURE_LOGGER_STD: ON (Description: Use the std module in the logger backend)
+--   IOX2_FEATURE_LOGGER_POSIX: OFF (Description: Use the POSIX abstraction in the logger backend)
+--   IOX2_FEATURE_LOGGER_BARE_METAL: OFF (Description: Use bare metal abstractions in the logger backend)
+--   IOX2_FEATURE_LOGGER_BUFFER: OFF (Description: Sets the buffer logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_CONSOLE: ON (Description: Sets the console logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_FILE: OFF (Description: Sets the file logger as the default logger backend)
+--   IOX2_FEATURE_LOGGER_LOG: OFF (Description: Enables https://crates.io/crates/log as default logger)
+--   IOX2_FEATURE_LOGGER_TRACING: OFF (Description: Enables https://crates.io/crates/tracing as default logger)
+-- [i] iceoryx2 common options and params:
+--   BUILD_TESTING: OFF (Description: Build tests)
+--   COVERAGE: OFF (Description: Build tests with code coverage)
+--   SANITIZERS: OFF (Description: Build with undefined-behavior- and address-sanitizer)
+--   WARNING_AS_ERROR: OFF (Description: Fails if the compiler emits a warning)
+-- [i] iceoryx2-bb-cxx options:
+--   IOX2_BB_CXX_CONFIG_USE_STD_EXPECTED: OFF (Description: Use the STL 'expected' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_USE_STD_OPTIONAL: OFF (Description: Use the STL 'optional' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_USE_CUSTOM_VOCABULARY_TYPES: OFF (Description: Use custom 'optional' and 'expected' instead of the iceoryx2 implementation)
+--   IOX2_BB_CXX_CONFIG_CUSTOM_VOCABULARY_TYPES_CMAKE_TARGET:  (Description: CMake target for custom 'optional' and 'expected')
+-- [i] iceoryx2-c options:
+--   RUST_BUILD_ARTIFACT_PATH: C:UserstaijshDesktopshm_communicator2iceoryx2/target/release (Description: The path to the folder with the Rust build artifacts)
+-- [i] iceoryx2 test options and params:
+--   USE_SYSTEM_GTEST: OFF (Description: Uses gTest from the system and fails if it is not found)
+-- Configuring done (2.8s)
+CMake Error in examples/c/blackboard/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/blackboard/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/cross_language_communication_basics/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/cross_language_communication_basics/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/discovery/CMakeLists.txt:
+  Target "shared-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/domains/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/domains/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/domains/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/event/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/event/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/event_multiplexing/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/event_multiplexing/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe/CMakeLists.txt:
+  Target "shm_communicator" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe_with_user_header/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/publish_subscribe_with_user_header/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/request_response/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/request_response/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_attributes/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_attributes/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_attributes/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_types/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_types/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/c/service_types/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in iceoryx2-cxx/CMakeLists.txt:
+  Target "includes-only" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in iceoryx2-cxx/CMakeLists.txt:
+  Target "static-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in iceoryx2-cxx/CMakeLists.txt:
+  Target "shared-lib" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/blackboard/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/blackboard/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/complex_data_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_basics/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_basics/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_container/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_container/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_complex_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/cross_language_communication_complex_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/discovery/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/domains/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/domains/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/domains/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event_multiplexing/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event_multiplexing/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event_based_communication/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/event_based_communication/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/health_monitoring/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/health_monitoring/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/health_monitoring/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/health_monitoring/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe_dynamic_data/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe_dynamic_data/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe_with_user_header/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/publish_subscribe_with_user_header/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/request_response/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/request_response/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/request_response_dynamic_data/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/request_response_dynamic_data/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_attributes/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_attributes/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_attributes/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+CMake Error in examples/cxx/service_types/CMakeLists.txt:
+  Target "static-lib-cxx" contains relative path in its
+  INTERFACE_INCLUDE_DIRECTORIES:
+
+    "C:UserstaijshDesktopshm_communicator2iceoryx2/target/release/iceoryx2-ffi-c-cbindgen/include"
+
+
+-- Generating done (12.6s)
+CMake Generate step failed.  Build files cannot be regenerated correctly.
