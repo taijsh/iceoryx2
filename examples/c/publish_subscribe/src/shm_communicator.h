@@ -35,11 +35,13 @@ shm_communicator_t* shm_communicator_create(void);
 // 初始化通信器
 // comm: 通信器句柄
 // config_path: iceoryx2 配置文件路径 (可以为 NULL，使用系统默认)
+// enable_waitset: 是否启用事件驱动的 WaitSet 模式 (true: 事件驱动微秒延迟, false: 纯忙轮询纳秒延迟)
 // callback: 订阅者接收数据时触发的数据回调
 // user_context: 需要透传给回调函数的用户上下文
 // 返回 true 表示成功 
 bool shm_communicator_init(shm_communicator_t* comm, 
                            const char* config_path,
+                           bool enable_waitset,
                            on_receive_cb callback, 
                            void* user_context);
 
@@ -82,6 +84,11 @@ bool shm_communicator_publish(shm_communicator_t* comm, const char* topic, const
 // timeout_ms: 最大的阻塞等待时间（毫秒）
 // 返回 false 表示接收到终止信号或遇到不可逆错误，返回 true 表示未遇到致命错误可以继续运行
 bool shm_communicator_process_events(shm_communicator_t* comm, uint64_t timeout_ms);
+
+// 同步轮询所有活跃的订阅者并触发回调 (Busy Polling)
+// 只有在 enable_waitset = false 时使用，否则由后台 WaitSet 线程自动处理
+// 专为追求极致纳秒级延迟的场景设计
+void shm_communicator_poll(shm_communicator_t* comm);
 
 // 销毁通信器实例并释放资源
 void shm_communicator_destroy(shm_communicator_t* comm);

@@ -1,0 +1,22 @@
+
+FROM openeuler/openeuler:20.03-lts-sp3
+
+# OpenEuler 20.03 LTS comes natively with GCC 7.3.0
+RUN yum update -y && \
+    yum install -y \
+    gcc \
+    gcc-c++ \
+    make \
+    cmake \
+    wget \
+    curl \
+    git \
+    python3-devel \
+    pkgconfig \
+    clang-devel \
+    llvm \
+    && yum clean all
+
+WORKDIR /app/iceoryx2
+
+CMD ["tail", "-f", "/dev/null"]

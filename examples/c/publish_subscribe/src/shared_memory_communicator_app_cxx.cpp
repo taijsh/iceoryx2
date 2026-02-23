@@ -64,6 +64,7 @@ struct AppConfig {
     size_t payload_size = 1024;
     size_t interval_ms = 1000;
     int cpu_core_id = -1;
+    bool enable_waitset = true;
     std::string config_path = "/home/taijsh/ljtx/ljtx_component.toml";
 };
 
@@ -74,6 +75,7 @@ void print_help() {
               << "  --sub <topic>       订阅到主题 (可多次使用)\n"
               << "  --size <bytes>      负载大小字节数 (默认: 1024)\n"
               << "  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n"
+              << "  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n"
               << "  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n"
               << "  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n"
               << "  --help              显示本帮助信息\n";
@@ -112,6 +114,13 @@ AppConfig parse_args(int argc, char** argv) {
                 std::cerr << "错误: --interval 需要指定毫秒数\n";
                 std::exit(1);
             }
+        } else if (arg == "--waitset") {
+            if (i + 1 < argc) {
+                config.enable_waitset = (std::stoi(argv[++i]) != 0);
+            } else {
+                std::cerr << "错误: --waitset 需要 0 或 1\n";
+                std::exit(1);
+            }
         } else if (arg == "--cpu") {
             if (i + 1 < argc) {
                 config.cpu_core_id = std::stoi(argv[++i]);
@@ -143,7 +152,7 @@ int main(int argc, char** argv) {
 
     // 1. 创建通信器
     shm_communicator_t* comm = shm_communicator_create();
-    if (!shm_communicator_init(comm, config.config_path.c_str(), app_on_receive, nullptr)) {
+    if (!shm_communicator_init(comm, config.config_path.c_str(), config.enable_waitset, app_on_receive, nullptr)) {
         std::cerr << "无法初始化 SharedMemoryCommunicator\n";
         return 1;
     }
@@ -181,6 +190,7 @@ int main(int argc, char** argv) {
               << "配置校验:\n"
               << "  负载大小: " << config.payload_size << " 字节\n"
               << "  间隔: " << config.interval_ms << " 毫秒\n"
+              << "  启用 WaitSet 事件机制: " << (config.enable_waitset ? "是 (微秒级延迟,低CPU)" : "否 (纯忙轮询,纳秒级延迟,高CPU)") << "\n"
               << "  绑定 CPU 核心: " << config.cpu_core_id << "\n"
               << "  配置路径: " << config.config_path << "\n";
 
@@ -205,9 +215,17 @@ int main(int argc, char** argv) {
             shm_communicator_publish(comm, topic.c_str(), dummy_data.data(), config.payload_size);
         }
 
-        // 等待并处理事件回调
-        for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
-            shm_communicator_process_events(comm, 100);
+        // 根据配置接收数据
+        if (config.enable_waitset) {
+            for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
+                shm_communicator_process_events(comm, 100);
+            }
+        } else {
+            uint64_t start_time = app_get_time_ns();
+            uint64_t interval_ns = config.interval_ms * 1000000ULL;
+            while (keep_running && (app_get_time_ns() - start_time) < interval_ns) {
+                shm_communicator_poll(comm);
+            }
         }
     }
 

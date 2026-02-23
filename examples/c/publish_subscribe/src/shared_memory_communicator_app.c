@@ -63,6 +63,7 @@ typedef struct {
     size_t payload_size;
     size_t interval_ms;
     int cpu_core_id;
+    bool enable_waitset;
     char config_path[1024];
 } AppConfig;
 
@@ -73,6 +74,7 @@ void print_help() {
     printf("  --sub <topic>       订阅到主题 (可多次使用)\n");
     printf("  --size <bytes>      负载大小字节数 (默认: 1024)\n");
     printf("  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n");
+    printf("  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n");
     printf("  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n");
     printf("  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n");
     printf("  --help              显示本帮助信息\n");
@@ -84,6 +86,7 @@ AppConfig parse_args(int argc, char** argv) {
     config.payload_size = 1024;
     config.interval_ms = 1000;
     config.cpu_core_id = -1;
+    config.enable_waitset = true;
     strcpy(config.config_path, "/home/taijsh/ljtx/ljtx_component.toml");
 
     for (int i = 1; i < argc; ++i) {
@@ -113,6 +116,13 @@ AppConfig parse_args(int argc, char** argv) {
                 config.interval_ms = (size_t)strtoul(argv[++i], NULL, 10);
             } else {
                 fprintf(stderr, "错误: --interval 需要指定毫秒数\n");
+                exit(1);
+            }
+        } else if (strcmp(argv[i], "--waitset") == 0) {
+            if (i + 1 < argc) {
+                config.enable_waitset = (atoi(argv[++i]) != 0);
+            } else {
+                fprintf(stderr, "错误: --waitset 需要 0 或 1\n");
                 exit(1);
             }
         } else if (strcmp(argv[i], "--cpu") == 0) {
@@ -146,7 +156,7 @@ int main(int argc, char** argv) {
 
     // 1. 创建通信器
     shm_communicator_t* comm = shm_communicator_create();
-    if (!shm_communicator_init(comm, config.config_path, app_on_receive, NULL)) {
+    if (!shm_communicator_init(comm, config.config_path, config.enable_waitset, app_on_receive, NULL)) {
         fprintf(stderr, "无法初始化 SharedMemoryCommunicator\n");
         return 1;
     }
@@ -180,6 +190,7 @@ int main(int argc, char** argv) {
     printf("配置校验:\n");
     printf("  负载大小: %zu 字节\n", config.payload_size);
     printf("  间隔: %zu 毫秒\n", config.interval_ms);
+    printf("  启用 WaitSet 事件机制: %s\n", config.enable_waitset ? "是 (微秒级延迟,低CPU)" : "否 (纯忙轮询,纳秒级延迟,高CPU)");
     printf("  绑定 CPU 核心: %d\n", config.cpu_core_id);
     printf("  配置路径: %s\n", config.config_path);
 
@@ -204,10 +215,19 @@ int main(int argc, char** argv) {
             shm_communicator_publish(comm, config.pub_topics[i], dummy_data, config.payload_size);
         }
 
-        // 5. 等待并处理事件回调，因为采用独立线程接收，这里可仅作睡眠或保活轮询
-        for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
-            // 这里调用 process_events 仅仅起到调用 `iox2_node_wait` 挂起 100ms 的作用。
-            shm_communicator_process_events(comm, 100);
+        // 5. 根据配置接收数据
+        if (config.enable_waitset) {
+            // WaitSet 模式下，后台已有专门线程处理数据接收。这里仅作为每次发送的定期间隔休眠。
+            for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
+                shm_communicator_process_events(comm, 100);
+            }
+        } else {
+            // 忙轮询模式：不再休眠，死循环主动探取，直到达到发送时间（或者用户自行将发送与接收跨线程拆分）。
+            uint64_t start_time = app_get_time_ns();
+            uint64_t interval_ns = config.interval_ms * 1000000ULL;
+            while (keep_running && (app_get_time_ns() - start_time) < interval_ns) {
+                shm_communicator_poll(comm);
+            }
         }
     }
 

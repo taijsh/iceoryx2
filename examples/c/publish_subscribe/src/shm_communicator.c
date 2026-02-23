@@ -77,6 +77,7 @@ struct shm_communicator_t {
     SubscriberEntry subscribers[MAX_TOPICS];
     on_receive_cb user_callback;
     void* user_context;
+    bool enable_waitset;
 
 #ifdef __linux__
     pthread_t waitset_thread;
@@ -91,12 +92,14 @@ shm_communicator_t* shm_communicator_create(void) {
 
 bool shm_communicator_init(shm_communicator_t* comm,
                            const char* config_path,
+                           bool enable_waitset,
                            on_receive_cb callback,
                            void* user_context) {
     if (!comm) return false;
 
     comm->user_callback = callback;
     comm->user_context = user_context;
+    comm->enable_waitset = enable_waitset;
 
     // 默认加载指定配置文件或系统配置
     comm->config = NULL;
@@ -120,23 +123,25 @@ bool shm_communicator_init(shm_communicator_t* comm,
         return false;
     }
 
-    // 创建 WaitSet
-    iox2_waitset_builder_h waitset_builder = NULL;
-    iox2_waitset_builder_new(NULL, &waitset_builder);
-    iox2_waitset_builder_set_signal_handling_mode(&waitset_builder, iox2_signal_handling_mode_e_DISABLED);
-    if (iox2_waitset_builder_create(waitset_builder, iox2_service_type_e_IPC, NULL, &comm->waitset) != IOX2_OK) {
-        printf("无法创建 WaitSet。\n");
-        return false;
-    }
+    if (comm->enable_waitset) {
+        // 创建 WaitSet
+        iox2_waitset_builder_h waitset_builder = NULL;
+        iox2_waitset_builder_new(NULL, &waitset_builder);
+        iox2_waitset_builder_set_signal_handling_mode(&waitset_builder, iox2_signal_handling_mode_e_DISABLED);
+        if (iox2_waitset_builder_create(waitset_builder, iox2_service_type_e_IPC, NULL, &comm->waitset) != IOX2_OK) {
+            printf("无法创建 WaitSet。\n");
+            return false;
+        }
 
-    // 绑定一个 Dummy Listener 到 WaitSet，以防止 WaitSet 报出无附件错误而退出
-    if (iox2_service_name_new(NULL, "ShmCommunicator_Dummy_Event", strlen("ShmCommunicator_Dummy_Event"), &comm->dummy_service_name) == IOX2_OK) {
-        iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(comm->dummy_service_name));
-        iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
-        if (iox2_service_builder_event_open_or_create(ev_b, NULL, &comm->dummy_service) == IOX2_OK) {
-            iox2_port_factory_listener_builder_h list_b = iox2_port_factory_event_listener_builder(&comm->dummy_service, NULL);
-            if (iox2_port_factory_listener_builder_create(list_b, NULL, &comm->dummy_listener) == IOX2_OK) {
-                iox2_waitset_attach_notification(&comm->waitset, iox2_listener_get_file_descriptor(&comm->dummy_listener), NULL, &comm->dummy_guard);
+        // 绑定一个 Dummy Listener 到 WaitSet，以防止 WaitSet 报出无附件错误而退出
+        if (iox2_service_name_new(NULL, "ShmCommunicator_Dummy_Event", strlen("ShmCommunicator_Dummy_Event"), &comm->dummy_service_name) == IOX2_OK) {
+            iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(comm->dummy_service_name));
+            iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
+            if (iox2_service_builder_event_open_or_create(ev_b, NULL, &comm->dummy_service) == IOX2_OK) {
+                iox2_port_factory_listener_builder_h list_b = iox2_port_factory_event_listener_builder(&comm->dummy_service, NULL);
+                if (iox2_port_factory_listener_builder_create(list_b, NULL, &comm->dummy_listener) == IOX2_OK) {
+                    iox2_waitset_attach_notification(&comm->waitset, iox2_listener_get_file_descriptor(&comm->dummy_listener), NULL, &comm->dummy_guard);
+                }
             }
         }
     }
@@ -245,26 +250,28 @@ bool shm_communicator_register_subscriber(shm_communicator_t* comm, const char* 
         return false;
     }
 
-    // 3. 创建事件服务和监听器
-    char event_topic[512];
-    snprintf(event_topic, sizeof(event_topic), "%s_Events", topic);
-    if (iox2_service_name_new(NULL, event_topic, strlen(event_topic), &entry->event_service_name) != IOX2_OK) {
-        return false;
-    }
-    iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->event_service_name));
-    iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
-    if (iox2_service_builder_event_open_or_create(ev_b, NULL, &entry->event_service) != IOX2_OK) {
-        return false;
-    }
+    if (comm->enable_waitset) {
+        // 3. 创建事件服务和监听器
+        char event_topic[512];
+        snprintf(event_topic, sizeof(event_topic), "%s_Events", topic);
+        if (iox2_service_name_new(NULL, event_topic, strlen(event_topic), &entry->event_service_name) != IOX2_OK) {
+            return false;
+        }
+        iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->event_service_name));
+        iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
+        if (iox2_service_builder_event_open_or_create(ev_b, NULL, &entry->event_service) != IOX2_OK) {
+            return false;
+        }
 
-    iox2_port_factory_listener_builder_h list_b = iox2_port_factory_event_listener_builder(&entry->event_service, NULL);
-    if (iox2_port_factory_listener_builder_create(list_b, NULL, &entry->listener) != IOX2_OK) {
-        return false;
-    }
+        iox2_port_factory_listener_builder_h list_b = iox2_port_factory_event_listener_builder(&entry->event_service, NULL);
+        if (iox2_port_factory_listener_builder_create(list_b, NULL, &entry->listener) != IOX2_OK) {
+            return false;
+        }
 
-    // 4. 将监听器附加到通信器的 WaitSet
-    if (iox2_waitset_attach_notification(&comm->waitset, iox2_listener_get_file_descriptor(&entry->listener), NULL, &entry->guard) != IOX2_OK) {
-        return false;
+        // 4. 将监听器附加到通信器的 WaitSet
+        if (iox2_waitset_attach_notification(&comm->waitset, iox2_listener_get_file_descriptor(&entry->listener), NULL, &entry->guard) != IOX2_OK) {
+            return false;
+        }
     }
 
     entry->active = true;
@@ -312,19 +319,21 @@ bool shm_communicator_publish(shm_communicator_t* comm, const char* topic, const
 }
 
 // 内部处理某个特定连接的接收逻辑
-static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry) {
-    iox2_event_id_t event_id;
-    bool has_received_event = false;
+static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry, bool clear_events) {
+    if (clear_events && entry->listener) {
+        iox2_event_id_t event_id;
+        bool has_received_event = false;
 
-    // printf("[DEBUG] SHM: process_subscriber_entry start\n");
-    // 提取所有 Listener 中触发的事件，防止死锁累积
-    do {
-        has_received_event = false;
-        if (iox2_listener_try_wait_one(&entry->listener, &event_id, &has_received_event) != IOX2_OK) {
-            printf("[DEBUG] SHM: try_wait_one loop broke via ERROR\n");
-            break;
-        }
-    } while (has_received_event);
+        // printf("[DEBUG] SHM: process_subscriber_entry start\n");
+        // 提取所有 Listener 中触发的事件，防止死锁累积
+        do {
+            has_received_event = false;
+            if (iox2_listener_try_wait_one(&entry->listener, &event_id, &has_received_event) != IOX2_OK) {
+                printf("[DEBUG] SHM: try_wait_one loop broke via ERROR\n");
+                break;
+            }
+        } while (has_received_event);
+    }
 
     // 收取该主题的样本流并在回调中上抛
     bool has_samples = false;
@@ -356,7 +365,7 @@ static iox2_callback_progression_e waitset_on_event(iox2_waitset_attachment_id_h
         if (comm->subscribers[i].active) {
             // 通过守卫来判断此次事件的来源归属
             if (iox2_waitset_attachment_id_has_event_from(&attachment_id, &comm->subscribers[i].guard)) {
-                process_subscriber_entry(comm, &comm->subscribers[i]);
+                process_subscriber_entry(comm, &comm->subscribers[i], true);
                 has_handled = true;
             }
         }
@@ -397,6 +406,10 @@ static void* waitset_thread_func(void* arg) {
 bool shm_communicator_start(shm_communicator_t* comm, int cpu_core_id) {
     if (!comm) return false;
     
+    if (!comm->enable_waitset) {
+        return true; // 忙轮询模式下，不需要启动后台等待线程
+    }
+
     if (comm->thread_running) {
         return true; // 已经运行
     }
@@ -450,6 +463,17 @@ bool shm_communicator_process_events(shm_communicator_t* comm, uint64_t timeout_
     return true;
 }
 
+void shm_communicator_poll(shm_communicator_t* comm) {
+    if (!comm || comm->enable_waitset) return;
+
+    for (int i = 0; i < MAX_TOPICS; ++i) {
+        if (comm->subscribers[i].active) {
+            // 在不清理事件的情况下直接拉取数据 (因为没开 WaitSet)
+            process_subscriber_entry(comm, &comm->subscribers[i], false);
+        }
+    }
+}
+
 void shm_communicator_destroy(shm_communicator_t* comm) {
     if (!comm) return;
 
@@ -480,10 +504,12 @@ void shm_communicator_destroy(shm_communicator_t* comm) {
         }
 
         if (comm->subscribers[i].active) {
-            iox2_waitset_guard_drop(comm->subscribers[i].guard);
-            iox2_listener_drop(comm->subscribers[i].listener);
-            iox2_port_factory_event_drop(comm->subscribers[i].event_service);
-            iox2_service_name_drop(comm->subscribers[i].event_service_name);
+            if (comm->enable_waitset) {
+                iox2_waitset_guard_drop(comm->subscribers[i].guard);
+                iox2_listener_drop(comm->subscribers[i].listener);
+                iox2_port_factory_event_drop(comm->subscribers[i].event_service);
+                iox2_service_name_drop(comm->subscribers[i].event_service_name);
+            }
 
             iox2_subscriber_drop(comm->subscribers[i].subscriber);
             iox2_port_factory_pub_sub_drop(comm->subscribers[i].service);
@@ -491,14 +517,16 @@ void shm_communicator_destroy(shm_communicator_t* comm) {
         }
     }
 
-    if (comm->dummy_guard) {
-        iox2_waitset_guard_drop(comm->dummy_guard);
-        iox2_listener_drop(comm->dummy_listener);
-        iox2_port_factory_event_drop(comm->dummy_service);
-        iox2_service_name_drop(comm->dummy_service_name);
-    }
+    if (comm->enable_waitset) {
+        if (comm->dummy_guard) {
+            iox2_waitset_guard_drop(comm->dummy_guard);
+            iox2_listener_drop(comm->dummy_listener);
+            iox2_port_factory_event_drop(comm->dummy_service);
+            iox2_service_name_drop(comm->dummy_service_name);
+        }
 
-    iox2_waitset_drop(comm->waitset);
+        iox2_waitset_drop(comm->waitset);
+    }
     iox2_node_drop(comm->node_handle);
     if (comm->config) {
         iox2_config_drop(comm->config);
