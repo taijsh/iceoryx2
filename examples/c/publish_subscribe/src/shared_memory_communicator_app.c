@@ -206,29 +206,49 @@ int main(int argc, char** argv) {
     }
 
     while (keep_running) {
-        // 4. 对所有注册的发布者发送带有当前时间戳的 Payload
+        // 4. 对所有注册的发布者发送带有当前时间戳的 Payload (使用真零拷贝接口)
         for (int i = 0; i < config.pub_count; ++i) {
-            if (config.payload_size >= sizeof(uint64_t)) {
-                uint64_t current_time_ns = app_get_time_ns();
-                memcpy(dummy_data, &current_time_ns, sizeof(uint64_t));
+            uint64_t t1 = app_get_time_ns();
+            
+            void* sample_h = NULL;
+            void* payload = shm_communicator_loan_uninit(comm, config.pub_topics[i], config.payload_size, &sample_h);
+            
+            uint64_t t2 = app_get_time_ns();
+            
+            if (payload && sample_h) {
+                // 在 loan 成功后立即获取时间戳以保证精度
+                if (config.payload_size >= sizeof(uint64_t)) {
+                    uint64_t current_time_ns = app_get_time_ns();
+                    memcpy(payload, &current_time_ns, sizeof(uint64_t));
+                    
+                    // 如果有剩余空间，可以填充其他测试数据
+                    if (config.payload_size > sizeof(uint64_t)) {
+                        // memset((uint8_t*)payload + sizeof(uint64_t), 0, config.payload_size - sizeof(uint64_t));
+                    }
+                }
+                
+                uint64_t t3 = app_get_time_ns();
+                
+                // 执行零拷贝发送
+                shm_communicator_send(comm, config.pub_topics[i], sample_h);
+                
+                uint64_t t4 = app_get_time_ns();
+                
+                // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
+                shm_communicator_ensure_pre_loan(comm, config.pub_topics[i]);
+
+                // 打印各项操作耗时
+                printf("[%s] 发送统计: loan: %.2f us, copy: %.2f us, send: %.2f us\n",
+                       config.pub_topics[i],
+                       (t2 - t1) / 1000.0,
+                       (t3 - t2) / 1000.0,
+                       (t4 - t3) / 1000.0);
             }
-            shm_communicator_publish(comm, config.pub_topics[i], dummy_data, config.payload_size);
         }
 
-        // 5. 根据配置接收数据
-        if (config.enable_waitset) {
-            // WaitSet 模式下，后台已有专门线程处理数据接收。这里仅作为每次发送的定期间隔休眠。
-            for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
-                shm_communicator_process_events(comm, 100);
-            }
-        } else {
-            // 忙轮询模式：不再休眠，死循环主动探取，直到达到发送时间（或者用户自行将发送与接收跨线程拆分）。
-            uint64_t start_time = app_get_time_ns();
-            uint64_t interval_ns = config.interval_ms * 1000000ULL;
-            while (keep_running && (app_get_time_ns() - start_time) < interval_ns) {
-                shm_communicator_poll(comm);
-            }
-        }
+        // 5. 数据接收由后台线程自动通过 app_on_receive 回调处理。
+        // 主线程只需按照业务要求的频率休眠。
+        SLEEP_MS(config.interval_ms);
     }
 
     printf("应用程序正在停止...\n");

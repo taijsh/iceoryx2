@@ -33,11 +33,16 @@ void signal_handler(int sig) {
     keep_running = false;
 }
 
-// 提取当前时间的纳秒
+// 提取当前时间的纳秒 (Wall Clock, 用于跨进程延迟统计)
 uint64_t app_get_time_ns() {
-    auto now = std::chrono::time_point_cast<std::chrono::nanoseconds>(
-        std::chrono::system_clock::now());
-    return now.time_since_epoch().count();
+    auto now = std::chrono::system_clock::now();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+}
+
+// 提取当前时间的纳秒 (Steady Clock, 用于内部耗时统计)
+uint64_t app_get_steady_ns() {
+    auto now = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
 }
 
 // 订阅者的回调函数
@@ -156,7 +161,7 @@ int main(int argc, char** argv) {
         std::cerr << "无法初始化 SharedMemoryCommunicator\n";
         return 1;
     }
-    std::cout << "初始化成功\n";
+    std::cout << "初始化成功" << std::endl;
 
     // 设置信号
     std::signal(SIGINT, signal_handler);
@@ -165,25 +170,25 @@ int main(int argc, char** argv) {
     // 2. 注册发布者
     for (const auto& topic : config.pub_topics) {
         if (!shm_communicator_register_publisher(comm, topic.c_str())) {
-            std::cerr << "无法注册发布者主题: " << topic << "\n";
+            std::cerr << "无法注册发布者主题: " << topic << std::endl;
             return 1;
         }
     }
     if (!config.pub_topics.empty()) {
-        std::cout << "发布者注册成功\n";
+        std::cout << "发布者注册成功" << std::endl;
     }
 
     // 3. 注册订阅者
     for (const auto& topic : config.sub_topics) {
-        std::cout << "订阅者注册:" << topic << "\n";
+        std::cout << "订阅者注册:" << topic << std::endl;
         if (!shm_communicator_register_subscriber(comm, topic.c_str())) {
-            std::cerr << "无法注册订阅者主题: " << topic << "\n";
+            std::cerr << "无法注册订阅者主题: " << topic << std::endl;
             return 1;
         }
-        std::cout << "订阅者注册:" << topic << "成功\n";
+        std::cout << "订阅者注册:" << topic << "成功" << std::endl;
     }
     if (!config.sub_topics.empty()) {
-        std::cout << "订阅者注册成功\n";
+        std::cout << "订阅者注册成功" << std::endl;
     }
 
     std::cout << "应用程序已启动。\n"
@@ -192,44 +197,65 @@ int main(int argc, char** argv) {
               << "  间隔: " << config.interval_ms << " 毫秒\n"
               << "  启用 WaitSet 事件机制: " << (config.enable_waitset ? "是 (微秒级延迟,低CPU)" : "否 (纯忙轮询,纳秒级延迟,高CPU)") << "\n"
               << "  绑定 CPU 核心: " << config.cpu_core_id << "\n"
-              << "  配置路径: " << config.config_path << "\n";
+              << "  配置路径: " << config.config_path << std::endl;
 
     // 4. 启动后台处理线程
     if (!shm_communicator_start(comm, config.cpu_core_id)) {
-        std::cerr << "警告: 无法启动后台处理线程或平台不支持。\n";
+        std::cerr << "警告: 无法启动后台处理线程或平台不支持。" << std::endl;
     }
 
-    // 创建虚拟数据负载
+    // 创建虚拟数据负载 (仅作为填充)
     std::vector<uint8_t> dummy_data(config.payload_size);
     for (size_t i = 0; i < config.payload_size; ++i) {
         dummy_data[i] = static_cast<uint8_t>(i % 255);
     }
 
     while (keep_running) {
-        // 对所有注册的发布者发送带有当前时间戳的 Payload
+        // 4. 对所有注册的发布者发送带有当前时间戳的 Payload (使用真零拷贝接口)
         for (const auto& topic : config.pub_topics) {
-            if (config.payload_size >= sizeof(uint64_t)) {
-                uint64_t current_time_ns = app_get_time_ns();
-                std::memcpy(dummy_data.data(), &current_time_ns, sizeof(uint64_t));
+            uint64_t t1 = app_get_steady_ns();
+            
+            void* sample_h = nullptr;
+            void* payload = shm_communicator_loan_uninit(comm, topic.c_str(), config.payload_size, &sample_h);
+            
+            uint64_t t2 = app_get_steady_ns();
+            
+            if (payload && sample_h) {
+                // 在 loan 成功后立即获取时间戳以保证精度
+                if (config.payload_size >= sizeof(uint64_t)) {
+                    uint64_t current_time_ns = app_get_time_ns();
+                    std::memcpy(payload, &current_time_ns, sizeof(uint64_t));
+                    
+                    // 如果有剩余空间，可以填充其他测试数据
+                    if (config.payload_size > sizeof(uint64_t)) {
+                        // std::memset(static_cast<uint8_t*>(payload) + sizeof(uint64_t), 0, config.payload_size - sizeof(uint64_t));
+                    }
+                }
+                
+                uint64_t t3 = app_get_steady_ns();
+                
+                // 执行零拷贝发送
+                shm_communicator_send(comm, topic.c_str(), sample_h);
+                
+                uint64_t t4 = app_get_steady_ns();
+                
+                // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
+                shm_communicator_ensure_pre_loan(comm, topic.c_str());
+
+                // 打印各项操作耗时
+                std::cout << "[" << topic << "] 发送统计: loan: " 
+                          << std::fixed << std::setprecision(2) << (t2 - t1) / 1000.0 << " us, copy: "
+                          << (t3 - t2) / 1000.0 << " us, send: "
+                          << (t4 - t3) / 1000.0 << " us" << std::endl;
             }
-            shm_communicator_publish(comm, topic.c_str(), dummy_data.data(), config.payload_size);
         }
 
-        // 根据配置接收数据
-        if (config.enable_waitset) {
-            for (size_t elapsed_ms = 0; elapsed_ms < config.interval_ms && keep_running; elapsed_ms += 100) {
-                shm_communicator_process_events(comm, 100);
-            }
-        } else {
-            uint64_t start_time = app_get_time_ns();
-            uint64_t interval_ns = config.interval_ms * 1000000ULL;
-            while (keep_running && (app_get_time_ns() - start_time) < interval_ns) {
-                shm_communicator_poll(comm);
-            }
-        }
+        // 5. 数据接收由后台线程自动通过 app_on_receive 回调处理。
+        // 主线程只需按照业务要求的频率休眠。
+        SLEEP_MS(config.interval_ms);
     }
 
-    std::cout << "应用程序正在停止...\n";
+    std::cout << "应用程序正在停止..." << std::endl;
 
     shm_communicator_destroy(comm);
 
