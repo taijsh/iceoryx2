@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
         }
 
         // 让出 CPU，避免疯狂空转
-        std::this_thread::yield();
+        //std::this_thread::yield();
     }
 
     shm_communicator_destroy(comm);

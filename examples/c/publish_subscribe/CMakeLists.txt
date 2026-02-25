@@ -36,3 +36,11 @@ target_link_libraries(shm_communicator iceoryx2-c::static-lib)
 # 新增 C++11 执行应用，并链接上面的动态库
 add_executable(example_cxx_shared_memory_app src/shared_memory_communicator_app_cxx.cpp)
 target_link_libraries(example_cxx_shared_memory_app shm_communicator)
+
+# 新增压力测试程序
+add_executable(shm_stress_test src/shm_stress_test.cpp)
+target_link_libraries(shm_stress_test shm_communicator)
+
+# 新增吞吐量测试程序
+add_executable(shm_throughput_test src/shm_throughput_test.cpp)
+target_link_libraries(shm_throughput_test shm_communicator)

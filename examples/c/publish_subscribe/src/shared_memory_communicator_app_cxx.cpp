@@ -216,6 +216,7 @@ int main(int argc, char** argv) {
             uint64_t t1 = app_get_steady_ns();
             
             void* sample_h = nullptr;
+            uint64_t current_time_ns = app_get_time_ns();
             void* payload = shm_communicator_loan_uninit(comm, topic.c_str(), config.payload_size, &sample_h);
             
             uint64_t t2 = app_get_steady_ns();
@@ -223,7 +224,7 @@ int main(int argc, char** argv) {
             if (payload && sample_h) {
                 // 在 loan 成功后立即获取时间戳以保证精度
                 if (config.payload_size >= sizeof(uint64_t)) {
-                    uint64_t current_time_ns = app_get_time_ns();
+                    
                     std::memcpy(payload, &current_time_ns, sizeof(uint64_t));
                     
                     // 如果有剩余空间，可以填充其他测试数据
@@ -240,7 +241,7 @@ int main(int argc, char** argv) {
                 
                 
                 // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
-                //shm_communicator_ensure_pre_loan(comm, topic.c_str());
+                shm_communicator_ensure_pre_loan(comm, topic.c_str());
 
                 uint64_t t4 = app_get_steady_ns();
                 // 打印各项操作耗时
