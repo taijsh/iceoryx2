@@ -40,7 +40,6 @@ struct AppConfig {
 
 std::vector<TopicState> g_topics(TOPIC_COUNT);
 std::atomic<bool> keep_running(true);
-std::mutex g_log_mutex;
 
 void signal_handler(int) {
     keep_running = false;
@@ -57,56 +56,6 @@ void on_receive(const char* topic_name, const void* data, size_t size, void* use
             }
             return;
         }
-    }
-}
-
-// Churn 线程：随机注册/注销主题
-void churn_thread_func(shm_communicator_t* comm, int start_idx, int count, bool as_publisher) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis_idx(start_idx, start_idx + count - 1);
-    std::uniform_int_distribution<> dis_sleep(1000, 5000); // 1-5秒
-
-    while (keep_running) {
-        int idx = dis_idx(gen);
-        bool target_state = !g_topics[idx].is_registered;
-
-        {
-            std::lock_guard<std::mutex> lock(g_log_mutex);
-            std::cout << "[CHURN] Topic " << g_topics[idx].name 
-                      << " -> " << (target_state ? "REGISTER" : "UNREGISTER") 
-                      << (as_publisher ? " (PUB)" : " (SUB)") << std::endl;
-        }
-
-        if (target_state) {
-            bool ok = as_publisher ? 
-                shm_communicator_register_publisher(comm, g_topics[idx].name.c_str()) :
-                shm_communicator_register_subscriber(comm, g_topics[idx].name.c_str());
-            if (ok) g_topics[idx].is_registered = true;
-        } else {
-            if (as_publisher) {
-                shm_communicator_unregister_publisher(comm, g_topics[idx].name.c_str());
-            } else {
-                shm_communicator_unregister_subscriber(comm, g_topics[idx].name.c_str());
-            }
-            g_topics[idx].is_registered = false;
-        }
-
-        SLEEP_MS(dis_sleep(gen));
-    }
-}
-
-// 发送线程：持续尝试在指定范围的主题上发送
-void traffic_thread_func(shm_communicator_t* comm, int start_idx, int count) {
-    uint8_t dummy[64] = {0};
-    while (keep_running) {
-        // 尝试在指定的主题范围内发送
-        for (int i = start_idx; i < start_idx + count; ++i) {
-            if (shm_communicator_publish(comm, g_topics[i].name.c_str(), dummy, sizeof(dummy))) {
-                g_topics[i].sent_count++;
-            }
-        }
-        std::this_thread::yield();
     }
 }
 
@@ -144,58 +93,95 @@ int main(int argc, char** argv) {
     }
     shm_communicator_start(comm, -1);
 
-    std::cout << "压力测试启动模式: " << config.mode << " (按 Ctrl+C 停止)" << std::endl;
+    std::cout << "压力测试启动模式: " << config.mode << " (单线程模式, 按 Ctrl+C 停止)" << std::endl;
 
-    std::thread churn_th;
-    std::vector<std::thread> traffic_threads;
-    const int APP_TRAFFIC_THREADS = 5; // 启动 5 个线程，每个线程负责 2 个主题
-    int topics_per_thread = TOPIC_COUNT / APP_TRAFFIC_THREADS;
+    // 随机数生成器用于 Churn
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis_idx_sender(0, PUB_SET_SIZE - 1);
+    std::uniform_int_distribution<> dis_idx_receiver(PUB_SET_SIZE, TOPIC_COUNT - 1);
+    std::uniform_int_distribution<> dis_sleep(1000, 5000); // 1-5秒
+
+    // 准备发送数据
+    uint8_t dummy[64];
+    for(int i=0; i<64; ++i) dummy[i] = (uint8_t)i;
 
     if (config.mode == "sender") {
         // 为了让接收端能测到东西，发送端对主题 5-9 进行持久化注册
         for (int i = PUB_SET_SIZE; i < TOPIC_COUNT; ++i) {
-            if (!shm_communicator_register_publisher(comm, g_topics[i].name.c_str())) {
-                std::cerr << "[ERROR] Failed to register permanent publisher: " << g_topics[i].name << std::endl;
-            } else {
+            if (shm_communicator_register_publisher(comm, g_topics[i].name.c_str())) {
                 g_topics[i].is_registered = true;
             }
         }
-        // 对 Topics 0-4 进行随机注册注销压力测试
-        churn_th = std::thread(churn_thread_func, comm, 0, PUB_SET_SIZE, true);
     } else {
         // 为了让发送端能测到东西，接收端对主题 0-4 进行持久化监听
         for (int i = 0; i < PUB_SET_SIZE; ++i) {
-            if (!shm_communicator_register_subscriber(comm, g_topics[i].name.c_str())) {
-                std::cerr << "[ERROR] Failed to register permanent subscriber: " << g_topics[i].name << std::endl;
-            } else {
+            if (shm_communicator_register_subscriber(comm, g_topics[i].name.c_str())) {
                 g_topics[i].is_registered = true;
             }
         }
-        // 对 Topics 5-9 进行随机注册注销压力测试
-        churn_th = std::thread(churn_thread_func, comm, PUB_SET_SIZE, SUB_SET_SIZE, false);
     }
 
-    // 统一启动流量线程，分发不同的主题索引
-    for (int t = 0; t < APP_TRAFFIC_THREADS; ++t) {
-        traffic_threads.emplace_back(traffic_thread_func, comm, t * topics_per_thread, topics_per_thread);
-    }
+    auto last_stats_time = std::chrono::steady_clock::now();
+    auto last_churn_time = std::chrono::steady_clock::now();
+    auto next_churn_interval = std::chrono::milliseconds(dis_sleep(gen));
 
     while (keep_running) {
-        SLEEP_MS(2000);
-        std::lock_guard<std::mutex> lock(g_log_mutex);
-        std::cout << "\n--- 进程模式: " << config.mode << " 统计 ---" << std::endl;
-        for (int i = 0; i < TOPIC_COUNT; ++i) {
-            std::cout << "Topic " << std::setw(15) << g_topics[i].name 
-                      << " | Reg: " << (g_topics[i].is_registered ? "Y" : "N")
-                      << " | Sent: " << std::setw(8) << g_topics[i].sent_count 
-                      << " | Recv: " << std::setw(8) << g_topics[i].received_count
-                      << " | Unexpected: " << g_topics[i].unexpected_count << std::endl;
-        }
-    }
+        auto now = std::chrono::steady_clock::now();
 
-    if (churn_th.joinable()) churn_th.join();
-    for (auto& t : traffic_threads) {
-        if (t.joinable()) t.join();
+        // 1. Churn 逻辑 (随机注册/注销)
+        if (now - last_churn_time >= next_churn_interval) {
+            int idx = (config.mode == "sender") ? dis_idx_sender(gen) : dis_idx_receiver(gen);
+            bool target_state = !g_topics[idx].is_registered;
+
+            std::cout << "[CHURN] Topic " << g_topics[idx].name 
+                      << " -> " << (target_state ? "REGISTER" : "UNREGISTER") << std::endl;
+
+            if (target_state) {
+                bool ok = (config.mode == "sender") ? 
+                    shm_communicator_register_publisher(comm, g_topics[idx].name.c_str()) :
+                    shm_communicator_register_subscriber(comm, g_topics[idx].name.c_str());
+                if (ok) g_topics[idx].is_registered = true;
+            } else {
+                if (config.mode == "sender") {
+                    shm_communicator_unregister_publisher(comm, g_topics[idx].name.c_str());
+                } else {
+                    shm_communicator_unregister_subscriber(comm, g_topics[idx].name.c_str());
+                }
+                g_topics[idx].is_registered = false;
+            }
+
+            last_churn_time = now;
+            next_churn_interval = std::chrono::milliseconds(dis_sleep(gen));
+        }
+
+        // 2. Traffic 逻辑 (发送)
+        // 即使在 receiver 模式下，我们也尝试发送，但这取决于 user 逻辑。
+        // 目前 stress_test 的 traffic 是在 0-9 全范围尝试发送？
+        // 之前的代码是: for (int i = start_idx; i < start_idx + count; ++i) { ... }
+        // 改为遍历所有主题，如果是 registered publisher 就会发送成功
+        for (int i = 0; i < TOPIC_COUNT; ++i) {
+            // 注意: publish 内部会查表，如果不匹配则直接返回 false
+            if (shm_communicator_publish(comm, g_topics[i].name.c_str(), dummy, sizeof(dummy))) {
+                g_topics[i].sent_count++;
+            }
+        }
+
+        // 3. Stats 逻辑 (每 2 秒打印一次)
+        if (now - last_stats_time >= std::chrono::seconds(2)) {
+            std::cout << "\n--- 进程模式: " << config.mode << " 统计 (单线程) ---" << std::endl;
+            for (int i = 0; i < TOPIC_COUNT; ++i) {
+                std::cout << "Topic " << std::setw(15) << g_topics[i].name 
+                          << " | Reg: " << (g_topics[i].is_registered ? "Y" : "N")
+                          << " | Sent: " << std::setw(8) << g_topics[i].sent_count 
+                          << " | Recv: " << std::setw(8) << g_topics[i].received_count
+                          << " | Unexpected: " << g_topics[i].unexpected_count << std::endl;
+            }
+            last_stats_time = now;
+        }
+
+        // 让出 CPU，避免疯狂空转
+        std::this_thread::yield();
     }
 
     shm_communicator_destroy(comm);

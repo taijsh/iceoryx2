@@ -237,11 +237,12 @@ int main(int argc, char** argv) {
                 // 执行零拷贝发送
                 shm_communicator_send(comm, topic.c_str(), sample_h);
                 
-                uint64_t t4 = app_get_steady_ns();
+                
                 
                 // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
-                shm_communicator_ensure_pre_loan(comm, topic.c_str());
+                //shm_communicator_ensure_pre_loan(comm, topic.c_str());
 
+                uint64_t t4 = app_get_steady_ns();
                 // 打印各项操作耗时
                 std::cout << "[" << topic << "] 发送统计: loan: " 
                           << std::fixed << std::setprecision(2) << (t2 - t1) / 1000.0 << " us, copy: "
