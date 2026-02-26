@@ -22,6 +22,7 @@
 // 引入原有的 C 语言通信器头文件
 extern "C" {
 #include "shm_communicator.h"
+#include "transmission_data.h"
 }
 
 // 全局运行状态标志
@@ -70,6 +71,8 @@ struct AppConfig {
     size_t interval_ms = 1000;
     int cpu_core_id = -1;
     bool enable_waitset = true;
+    bool use_copy_mode = false;
+    shm_data_type_e data_type = SHM_DATA_DYNAMIC;
     std::string config_path = "/home/taijsh/ljtx/ljtx_component.toml";
 };
 
@@ -81,7 +84,9 @@ void print_help() {
               << "  --size <bytes>      负载大小字节数 (默认: 1024)\n"
               << "  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n"
               << "  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n"
+              << "  --mode <zero|copy>  发送模式: zero 为零拷贝, copy 为拷贝模式 (默认: zero)\n"
               << "  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n"
+              << "  --type <dyn|common|large|stream> 数据类型 (默认: dyn)\n"
               << "  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n"
               << "  --help              显示本帮助信息\n";
 }
@@ -133,6 +138,29 @@ AppConfig parse_args(int argc, char** argv) {
                 std::cerr << "错误: --cpu 需要指定核心ID\n";
                 std::exit(1);
             }
+        } else if (arg == "--mode") {
+            if (i + 1 < argc) {
+                std::string mode = argv[++i];
+                if (mode == "copy") {
+                    config.use_copy_mode = true;
+                } else {
+                    config.use_copy_mode = false;
+                }
+            } else {
+                std::cerr << "错误: --mode 需要指定 zero 或 copy\n";
+                std::exit(1);
+            }
+        } else if (arg == "--type") {
+            if (i + 1 < argc) {
+                std::string type_str = argv[++i];
+                if (type_str == "common") config.data_type = SHM_DATA_COMMON;
+                else if (type_str == "large") config.data_type = SHM_DATA_LARGE;
+                else if (type_str == "stream") config.data_type = SHM_DATA_STREAM;
+                else config.data_type = SHM_DATA_DYNAMIC;
+            } else {
+                std::cerr << "错误: --type 需要指定 dyn, common, large 或 stream\n";
+                std::exit(1);
+            }
         } else if (arg == "--config") {
             if (i + 1 < argc) {
                 config.config_path = argv[++i];
@@ -163,13 +191,18 @@ int main(int argc, char** argv) {
     }
     std::cout << "初始化成功" << std::endl;
 
+    // 根据类型调整 Payload Size
+    if (config.data_type == SHM_DATA_COMMON) config.payload_size = sizeof(struct TransmissionCommonData);
+    else if (config.data_type == SHM_DATA_LARGE) config.payload_size = sizeof(struct TransmissionLargeData);
+    else if (config.data_type == SHM_DATA_STREAM) config.payload_size = sizeof(struct TransmissionStreamData);
+
     // 设置信号
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
     // 2. 注册发布者
     for (const auto& topic : config.pub_topics) {
-        if (!shm_communicator_register_publisher(comm, topic.c_str())) {
+        if (!shm_communicator_register_publisher_ext(comm, topic.c_str(), config.data_type)) {
             std::cerr << "无法注册发布者主题: " << topic << std::endl;
             return 1;
         }
@@ -181,7 +214,7 @@ int main(int argc, char** argv) {
     // 3. 注册订阅者
     for (const auto& topic : config.sub_topics) {
         std::cout << "订阅者注册:" << topic << std::endl;
-        if (!shm_communicator_register_subscriber(comm, topic.c_str())) {
+        if (!shm_communicator_register_subscriber_ext(comm, topic.c_str(), config.data_type)) {
             std::cerr << "无法注册订阅者主题: " << topic << std::endl;
             return 1;
         }
@@ -196,6 +229,8 @@ int main(int argc, char** argv) {
               << "  负载大小: " << config.payload_size << " 字节\n"
               << "  间隔: " << config.interval_ms << " 毫秒\n"
               << "  启用 WaitSet 事件机制: " << (config.enable_waitset ? "是 (微秒级延迟,低CPU)" : "否 (纯忙轮询,纳秒级延迟,高CPU)") << "\n"
+              << "  发送模式: " << (config.use_copy_mode ? "拷贝模式 (shm_communicator_publish_copy)" : "零拷贝模式 (shm_communicator_loan/send)") << "\n"
+              << "  数据类型: " << config.data_type << " (0:dyn, 1:common, 2:large, 3:stream)\n"
               << "  绑定 CPU 核心: " << config.cpu_core_id << "\n"
               << "  配置路径: " << config.config_path << std::endl;
 
@@ -214,41 +249,56 @@ int main(int argc, char** argv) {
         // 4. 对所有注册的发布者发送带有当前时间戳的 Payload (使用真零拷贝接口)
         for (const auto& topic : config.pub_topics) {
             uint64_t t1 = app_get_steady_ns();
-            
-            void* sample_h = nullptr;
-            uint64_t current_time_ns = app_get_time_ns();
-            void* payload = shm_communicator_loan_uninit(comm, topic.c_str(), config.payload_size, &sample_h);
-            
-            uint64_t t2 = app_get_steady_ns();
-            
-            if (payload && sample_h) {
-                // 在 loan 成功后立即获取时间戳以保证精度
+            uint64_t t2, t3, t4;
+            bool success = false;
+
+            if (config.use_copy_mode) {
+                // 使用拷贝模式发送
+                uint64_t current_time_ns = app_get_time_ns();
                 if (config.payload_size >= sizeof(uint64_t)) {
-                    
-                    std::memcpy(payload, &current_time_ns, sizeof(uint64_t));
-                    
-                    // 如果有剩余空间，可以填充其他测试数据
-                    if (config.payload_size > sizeof(uint64_t)) {
-                        // std::memset(static_cast<uint8_t*>(payload) + sizeof(uint64_t), 0, config.payload_size - sizeof(uint64_t));
-                    }
+                    std::memcpy(dummy_data.data(), &current_time_ns, sizeof(uint64_t));
                 }
                 
-                uint64_t t3 = app_get_steady_ns();
+                t2 = app_get_steady_ns();
+                t3 = app_get_steady_ns();
                 
-                // 执行零拷贝发送
-                shm_communicator_send(comm, topic.c_str(), sample_h);
+                success = shm_communicator_publish_copy(comm, topic.c_str(), dummy_data.data(), config.payload_size);
                 
+                t4 = app_get_steady_ns();
+            } else {
+                // 使用零拷贝模式发送
+                void* sample_h = nullptr;
+                void* payload = shm_communicator_loan_uninit(comm, topic.c_str(), config.payload_size, &sample_h);
                 
+                t2 = app_get_steady_ns();
                 
-                // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
-                shm_communicator_ensure_pre_loan(comm, topic.c_str());
+                if (payload && sample_h) {
+                    if (config.payload_size >= sizeof(uint64_t)) {
+                        uint64_t current_time_ns = app_get_time_ns();
+                        std::memcpy(payload, &current_time_ns, sizeof(uint64_t));
+                    }
+                    
+                    t3 = app_get_steady_ns();
+                    
+                    success = shm_communicator_send(comm, topic.c_str(), sample_h);
+                    
+                    t4 = app_get_steady_ns();
+                    
+                    shm_communicator_ensure_pre_loan(comm, topic.c_str());
+                }
+            }
 
-                uint64_t t4 = app_get_steady_ns();
+            if (success) {
                 // 打印各项操作耗时
-                std::cout << "[" << topic << "] 发送统计: loan: " 
-                          << std::fixed << std::setprecision(2) << (t2 - t1) / 1000.0 << " us, copy: "
-                          << (t3 - t2) / 1000.0 << " us, send: "
-                          << (t4 - t3) / 1000.0 << " us" << std::endl;
+                if (config.use_copy_mode) {
+                    std::cout << "[" << topic << "] 发送统计 (Copy Mode): total: " 
+                              << std::fixed << std::setprecision(2) << (t4 - t1) / 1000.0 << " us" << std::endl;
+                } else {
+                    std::cout << "[" << topic << "] 发送统计 (Zero Copy): loan: " 
+                              << std::fixed << std::setprecision(2) << (t2 - t1) / 1000.0 << " us, copy: "
+                              << (t3 - t2) / 1000.0 << " us, send: "
+                              << (t4 - t3) / 1000.0 << " us" << std::endl;
+                }
             }
         }
 

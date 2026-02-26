@@ -11,6 +11,7 @@
 
 #include "shm_communicator.h"
 #include "iox2/iceoryx2.h"
+#include "transmission_data.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -97,6 +98,7 @@ typedef struct PublisherEntry {
     size_t pre_loaned_size;
     size_t max_loaned_size; 
 
+    shm_data_type_e data_type;               // 数据类型
     volatile bool marked_for_unregistration; // 标记是否注销
     uint64_t zero_peer_count_timestamp_ms;    // 记录对端数量为 0 的起始时间戳
     volatile int ref_count;                  // 引用计数，防止在数据路径执行时资源被释放
@@ -117,6 +119,7 @@ typedef struct SubscriberEntry {
     // WaitSet 守卫句柄
     iox2_waitset_guard_h guard;
 
+    shm_data_type_e data_type;               // 数据类型
     volatile bool marked_for_unregistration; // 标记是否注销
     uint64_t zero_peer_count_timestamp_ms;    // 记录对端数量为 0 的起始时间戳
     volatile int ref_count;                  // 引用计数
@@ -142,14 +145,14 @@ struct shm_communicator_t {
 };
 
 // 内部同步操作封装
-static bool internal_register_publisher(shm_communicator_t* comm, const char* topic);
 static void internal_unregister_publisher(shm_communicator_t* comm, const char* topic);
-static bool internal_register_subscriber(shm_communicator_t* comm, const char* topic);
 static void internal_unregister_subscriber(shm_communicator_t* comm, const char* topic);
 
 // 真正的资源释放逻辑
 static void real_drop_publisher(PublisherEntry* entry);
 static void real_drop_subscriber(SubscriberEntry* entry);
+static bool internal_register_publisher(shm_communicator_t* comm, const char* topic, shm_data_type_e type);
+static bool internal_register_subscriber(shm_communicator_t* comm, const char* topic, shm_data_type_e type);
 
 shm_communicator_t* shm_communicator_create(void) {
     shm_communicator_t* comm = (shm_communicator_t*)calloc(1, sizeof(shm_communicator_t));
@@ -209,8 +212,12 @@ bool shm_communicator_init(shm_communicator_t* comm,
 }
 
 bool shm_communicator_register_publisher(shm_communicator_t* comm, const char* topic) {
+    return shm_communicator_register_publisher_ext(comm, topic, SHM_DATA_DYNAMIC);
+}
+
+bool shm_communicator_register_publisher_ext(shm_communicator_t* comm, const char* topic, shm_data_type_e type) {
     if (!comm || !topic) return false;
-    return internal_register_publisher(comm, topic);
+    return internal_register_publisher(comm, topic, type);
 }
 
 void shm_communicator_unregister_publisher(shm_communicator_t* comm, const char* topic) {
@@ -219,8 +226,12 @@ void shm_communicator_unregister_publisher(shm_communicator_t* comm, const char*
 }
 
 bool shm_communicator_register_subscriber(shm_communicator_t* comm, const char* topic) {
+    return shm_communicator_register_subscriber_ext(comm, topic, SHM_DATA_DYNAMIC);
+}
+
+bool shm_communicator_register_subscriber_ext(shm_communicator_t* comm, const char* topic, shm_data_type_e type) {
     if (!comm || !topic) return false;
-    return internal_register_subscriber(comm, topic);
+    return internal_register_subscriber(comm, topic, type);
 }
 
 void shm_communicator_unregister_subscriber(shm_communicator_t* comm, const char* topic) {
@@ -230,7 +241,7 @@ void shm_communicator_unregister_subscriber(shm_communicator_t* comm, const char
 
 // ---------------- 内部实际执行逻辑 ----------------
 
-static bool internal_register_publisher(shm_communicator_t* comm, const char* topic) {
+static bool internal_register_publisher(shm_communicator_t* comm, const char* topic, shm_data_type_e type) {
     pthread_mutex_lock(&comm->mutex);
     PublisherEntry* entry = NULL;
     for (int i = 0; i < MAX_TOPICS; ++i) {
@@ -257,7 +268,21 @@ static bool internal_register_publisher(shm_communicator_t* comm, const char* to
     iox2_service_builder_h service_builder = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->service_name));
     iox2_service_builder_pub_sub_h pb = iox2_service_builder_pub_sub(service_builder);
     
-    iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_DYNAMIC, "uint8_t", strlen("uint8_t"), sizeof(uint8_t), alignof(uint8_t));
+    if (type == SHM_DATA_DYNAMIC) {
+        iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_DYNAMIC, "uint8_t", strlen("uint8_t"), sizeof(uint8_t), alignof(uint8_t));
+    } else {
+        const char* type_name = "";
+        size_t type_size = 0;
+        size_t type_align = 0;
+        switch (type) {
+            case SHM_DATA_COMMON: type_name = "TransmissionCommonData"; type_size = sizeof(struct TransmissionCommonData); type_align = alignof(struct TransmissionCommonData); break;
+            case SHM_DATA_LARGE:  type_name = "TransmissionLargeData";  type_size = sizeof(struct TransmissionLargeData);  type_align = alignof(struct TransmissionLargeData); break;
+            case SHM_DATA_STREAM: type_name = "TransmissionStreamData"; type_size = sizeof(struct TransmissionStreamData); type_align = alignof(struct TransmissionStreamData); break;
+            default: break;
+        }
+        iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_FIXED_SIZE, type_name, strlen(type_name), type_size, type_align);
+    }
+
     if (iox2_service_builder_pub_sub_open_or_create(pb, NULL, &entry->service) != IOX2_OK) {
         iox2_service_name_drop(entry->service_name); return false;
     }
@@ -280,6 +305,7 @@ static bool internal_register_publisher(shm_communicator_t* comm, const char* to
 
     pthread_mutex_lock(&comm->mutex);
     strncpy(entry->topic, topic, sizeof(entry->topic) - 1);
+    entry->data_type = type;
     pthread_mutex_unlock(&comm->mutex);
     return true;
 }
@@ -308,7 +334,7 @@ static void internal_unregister_publisher(shm_communicator_t* comm, const char* 
     pthread_mutex_unlock(&comm->mutex);
 }
 
-static bool internal_register_subscriber(shm_communicator_t* comm, const char* topic) {
+static bool internal_register_subscriber(shm_communicator_t* comm, const char* topic, shm_data_type_e type) {
     pthread_mutex_lock(&comm->mutex);
     SubscriberEntry* entry = NULL;
     for (int i = 0; i < MAX_TOPICS; ++i) {
@@ -335,7 +361,21 @@ static bool internal_register_subscriber(shm_communicator_t* comm, const char* t
     iox2_service_builder_h service_builder = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->service_name));
     iox2_service_builder_pub_sub_h pb = iox2_service_builder_pub_sub(service_builder);
     
-    iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_DYNAMIC, "uint8_t", strlen("uint8_t"), sizeof(uint8_t), alignof(uint8_t));
+    if (type == SHM_DATA_DYNAMIC) {
+        iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_DYNAMIC, "uint8_t", strlen("uint8_t"), sizeof(uint8_t), alignof(uint8_t));
+    } else {
+        const char* type_name = "";
+        size_t type_size = 0;
+        size_t type_align = 0;
+        switch (type) {
+            case SHM_DATA_COMMON: type_name = "TransmissionCommonData"; type_size = sizeof(struct TransmissionCommonData); type_align = alignof(struct TransmissionCommonData); break;
+            case SHM_DATA_LARGE:  type_name = "TransmissionLargeData";  type_size = sizeof(struct TransmissionLargeData);  type_align = alignof(struct TransmissionLargeData); break;
+            case SHM_DATA_STREAM: type_name = "TransmissionStreamData"; type_size = sizeof(struct TransmissionStreamData); type_align = alignof(struct TransmissionStreamData); break;
+            default: break;
+        }
+        iox2_service_builder_pub_sub_set_payload_type_details(&pb, iox2_type_variant_e_FIXED_SIZE, type_name, strlen(type_name), type_size, type_align);
+    }
+
     if (iox2_service_builder_pub_sub_open_or_create(pb, NULL, &entry->service) != IOX2_OK) {
         iox2_service_name_drop(entry->service_name); return false;
     }
@@ -345,20 +385,23 @@ static bool internal_register_subscriber(shm_communicator_t* comm, const char* t
         iox2_port_factory_pub_sub_drop(entry->service); iox2_service_name_drop(entry->service_name); return false;
     }
 
+    char event_topic[512];
+    snprintf(event_topic, sizeof(event_topic), "%s_Events", topic);
+    iox2_service_name_new(NULL, event_topic, strlen(event_topic), &entry->event_service_name);
+    iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->event_service_name));
+    iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
+    iox2_service_builder_event_open_or_create(ev_b, NULL, &entry->event_service);
+    iox2_port_factory_listener_builder_h list_builder = iox2_port_factory_event_listener_builder(&entry->event_service, NULL);
+    iox2_port_factory_listener_builder_create(list_builder, NULL, &entry->listener);
+
     if (comm->enable_waitset) {
-        char event_topic[512];
-        snprintf(event_topic, sizeof(event_topic), "%s_Events", topic);
-        iox2_service_name_new(NULL, event_topic, strlen(event_topic), &entry->event_service_name);
-        iox2_service_builder_h ev_sb = iox2_node_service_builder(&comm->node_handle, NULL, iox2_cast_service_name_ptr(entry->event_service_name));
-        iox2_service_builder_event_h ev_b = iox2_service_builder_event(ev_sb);
-        iox2_service_builder_event_open_or_create(ev_b, NULL, &entry->event_service);
-        iox2_port_factory_listener_builder_h list_b = iox2_port_factory_event_listener_builder(&entry->event_service, NULL);
-        iox2_port_factory_listener_builder_create(list_b, NULL, &entry->listener);
-        iox2_waitset_attach_notification(&comm->waitset, iox2_listener_get_file_descriptor(&entry->listener), NULL, &entry->guard);
+        iox2_file_descriptor_ptr fd = iox2_listener_get_file_descriptor(&entry->listener);
+        iox2_waitset_attach_notification(&comm->waitset, fd, NULL, &entry->guard);
     }
 
     pthread_mutex_lock(&comm->mutex);
     strncpy(entry->topic, topic, sizeof(entry->topic) - 1);
+    entry->data_type = type;
     pthread_mutex_unlock(&comm->mutex);
     return true;
 }
@@ -424,6 +467,55 @@ bool shm_communicator_publish(shm_communicator_t* comm, const char* topic, const
     return success;
 }
 
+bool shm_communicator_publish_copy(shm_communicator_t* comm, const char* topic, const void* data, size_t size) {
+    if (!comm || !topic || !data) return false;
+
+    PublisherEntry* entry = NULL;
+    pthread_mutex_lock(&comm->mutex);
+    for (int i = 0; i < MAX_TOPICS; ++i) {
+        if (strcmp(comm->publishers[i].topic, topic) == 0 && comm->publishers[i].topic[0] != '\0') {
+            entry = &comm->publishers[i];
+            entry->ref_count++;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&comm->mutex);
+
+    if (!entry || entry->publisher == NULL) {
+        if (entry) {
+            pthread_mutex_lock(&comm->mutex);
+            entry->ref_count--;
+            pthread_mutex_unlock(&comm->mutex);
+        }
+        return false;
+    }
+
+    // 直接调用 send_slice_copy 接口，直接将用户内存数据拷贝到共享内存进行发送
+    size_t element_size = 1;
+    size_t num_elements = size;
+    if (entry->data_type != SHM_DATA_DYNAMIC) {
+        switch (entry->data_type) {
+            case SHM_DATA_COMMON: element_size = sizeof(struct TransmissionCommonData); break;
+            case SHM_DATA_LARGE:  element_size = sizeof(struct TransmissionLargeData);  break;
+            case SHM_DATA_STREAM: element_size = sizeof(struct TransmissionStreamData); break;
+            default: break;
+        }
+        num_elements = 1;
+    }
+    int result = iox2_publisher_send_slice_copy(&entry->publisher, data, element_size, num_elements, NULL);
+    bool success = (result == IOX2_OK);
+
+    if (success && entry->notifier) {
+        iox2_notifier_notify(&entry->notifier, NULL);
+    }
+
+    pthread_mutex_lock(&comm->mutex);
+    entry->ref_count--;
+    pthread_mutex_unlock(&comm->mutex);
+
+    return success;
+}
+
 void* shm_communicator_loan_uninit(shm_communicator_t* comm, const char* topic, size_t size, void** sample_handle) {
     if (!comm || !topic || !sample_handle) return NULL;
     
@@ -472,7 +564,8 @@ void* shm_communicator_loan_uninit(shm_communicator_t* comm, const char* topic, 
     pthread_mutex_unlock(&comm->mutex);
 
     iox2_sample_mut_h sample = NULL;
-    if (iox2_publisher_loan_slice_uninit(&entry->publisher, NULL, &sample, size) != IOX2_OK) {
+    size_t num_to_loan = (entry->data_type == SHM_DATA_DYNAMIC) ? size : 1;
+    if (iox2_publisher_loan_slice_uninit(&entry->publisher, NULL, &sample, num_to_loan) != IOX2_OK) {
         pthread_mutex_lock(&comm->mutex);
         entry->ref_count--;
         pthread_mutex_unlock(&comm->mutex);
@@ -516,7 +609,8 @@ bool shm_communicator_send(shm_communicator_t* comm, const char* topic, void* sa
 
 static bool shm_communicator_ensure_pre_loan_internal(PublisherEntry* entry) {
     if (entry->pre_loaned_sample == NULL && entry->max_loaned_size > 0 && entry->publisher != NULL) {
-        if (iox2_publisher_loan_slice_uninit(&entry->publisher, NULL, &entry->pre_loaned_sample, entry->max_loaned_size) == IOX2_OK) {
+        size_t num_to_loan = (entry->data_type == SHM_DATA_DYNAMIC) ? entry->max_loaned_size : 1;
+        if (iox2_publisher_loan_slice_uninit(&entry->publisher, NULL, &entry->pre_loaned_sample, num_to_loan) == IOX2_OK) {
             entry->pre_loaned_size = entry->max_loaned_size;
             return true;
         }
@@ -551,7 +645,16 @@ static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* 
             const uint8_t* payload = NULL; c_size_t num_elements = 0;
             iox2_sample_payload(&sample, (const void**) &payload, &num_elements);
             if (comm->user_callback && !entry->marked_for_unregistration) {
-                comm->user_callback(entry->topic, payload, num_elements, comm->user_context);
+                size_t total_size = num_elements;
+                if (entry->data_type != SHM_DATA_DYNAMIC) {
+                    switch (entry->data_type) {
+                        case SHM_DATA_COMMON: total_size = sizeof(struct TransmissionCommonData); break;
+                        case SHM_DATA_LARGE:  total_size = sizeof(struct TransmissionLargeData);  break;
+                        case SHM_DATA_STREAM: total_size = sizeof(struct TransmissionStreamData); break;
+                        default: break;
+                    }
+                }
+                comm->user_callback(entry->topic, payload, total_size, comm->user_context);
             }
             iox2_sample_drop(sample);
         }

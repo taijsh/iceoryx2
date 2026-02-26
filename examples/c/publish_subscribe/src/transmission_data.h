@@ -15,10 +15,19 @@
 
 #include <stdint.h>
 
-struct TransmissionData {
-    int32_t x;
-    int32_t y;
-    double funky;
+struct TransmissionCommonData {
+    char header[512];
+    char payload[64 * 1024]; // 64KB
+};
+
+struct TransmissionLargeData {
+    char header[512];
+    char payload[2 * 1024 * 1024]; // 2MB
+};
+
+struct TransmissionStreamData {
+    char header[512];
+    char payload[32 * 1024 * 1024]; // 32MB
 };
 
 #endif

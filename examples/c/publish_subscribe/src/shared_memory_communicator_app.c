@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #include "shm_communicator.h"
+#include "transmission_data.h"
 
 #include <signal.h>
 #include <stdbool.h>
@@ -64,6 +65,8 @@ typedef struct {
     size_t interval_ms;
     int cpu_core_id;
     bool enable_waitset;
+    bool use_copy_mode;
+    shm_data_type_e data_type;
     char config_path[1024];
 } AppConfig;
 
@@ -76,6 +79,8 @@ void print_help() {
     printf("  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n");
     printf("  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n");
     printf("  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n");
+    printf("  --mode <zero|copy>  发送模式: zero 为零拷贝, copy 为拷贝模式 (默认: zero)\n");
+    printf("  --type <dyn|common|large|stream> 数据类型 (默认: dyn)\n");
     printf("  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n");
     printf("  --help              显示本帮助信息\n");
 }
@@ -87,6 +92,8 @@ AppConfig parse_args(int argc, char** argv) {
     config.interval_ms = 1000;
     config.cpu_core_id = -1;
     config.enable_waitset = true;
+    config.use_copy_mode = false;
+    config.data_type = SHM_DATA_DYNAMIC;
     strcpy(config.config_path, "/home/taijsh/ljtx/ljtx_component.toml");
 
     for (int i = 1; i < argc; ++i) {
@@ -132,6 +139,28 @@ AppConfig parse_args(int argc, char** argv) {
                 fprintf(stderr, "错误: --cpu 需要指定核心ID\n");
                 exit(1);
             }
+        } else if (strcmp(argv[i], "--mode") == 0) {
+            if (i + 1 < argc) {
+                if (strcmp(argv[++i], "copy") == 0) {
+                    config.use_copy_mode = true;
+                } else {
+                    config.use_copy_mode = false;
+                }
+            } else {
+                fprintf(stderr, "错误: --mode 需要指定 zero 或 copy\n");
+                exit(1);
+            }
+        } else if (strcmp(argv[i], "--type") == 0) {
+            if (i + 1 < argc) {
+                char* type_str = argv[++i];
+                if (strcmp(type_str, "common") == 0) config.data_type = SHM_DATA_COMMON;
+                else if (strcmp(type_str, "large") == 0) config.data_type = SHM_DATA_LARGE;
+                else if (strcmp(type_str, "stream") == 0) config.data_type = SHM_DATA_STREAM;
+                else config.data_type = SHM_DATA_DYNAMIC;
+            } else {
+                fprintf(stderr, "错误: --type 需要指定 dyn, common, large 或 stream\n");
+                exit(1);
+            }
         } else if (strcmp(argv[i], "--config") == 0) {
             if (i + 1 < argc) {
                 strncpy(config.config_path, argv[++i], sizeof(config.config_path) - 1);
@@ -162,13 +191,18 @@ int main(int argc, char** argv) {
     }
     printf("初始化成功\n");
 
+    // 根据类型调整 Payload Size
+    if (config.data_type == SHM_DATA_COMMON) config.payload_size = sizeof(struct TransmissionCommonData);
+    else if (config.data_type == SHM_DATA_LARGE) config.payload_size = sizeof(struct TransmissionLargeData);
+    else if (config.data_type == SHM_DATA_STREAM) config.payload_size = sizeof(struct TransmissionStreamData);
+
     // 设置信号 (iceoryx2 内部的信号拦截已被显式禁用，这里的原生信号监听可以正常工作)
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
     // 2. 注册发布者
     for (int i = 0; i < config.pub_count; ++i) {
-        if (!shm_communicator_register_publisher(comm, config.pub_topics[i])) {
+        if (!shm_communicator_register_publisher_ext(comm, config.pub_topics[i], config.data_type)) {
             fprintf(stderr, "无法注册发布者主题: %s\n", config.pub_topics[i]);
             return 1;
         }
@@ -178,7 +212,7 @@ int main(int argc, char** argv) {
     // 3. 注册订阅者
     for (int i = 0; i < config.sub_count; ++i) {
         printf("订阅者注册:%s\n", config.sub_topics[i]);
-        if (!shm_communicator_register_subscriber(comm, config.sub_topics[i])) {
+        if (!shm_communicator_register_subscriber_ext(comm, config.sub_topics[i], config.data_type)) {
             fprintf(stderr, "无法注册订阅者主题: %s\n", config.sub_topics[i]);
             return 1;
         }
@@ -191,6 +225,8 @@ int main(int argc, char** argv) {
     printf("  负载大小: %zu 字节\n", config.payload_size);
     printf("  间隔: %zu 毫秒\n", config.interval_ms);
     printf("  启用 WaitSet 事件机制: %s\n", config.enable_waitset ? "是 (微秒级延迟,低CPU)" : "否 (纯忙轮询,纳秒级延迟,高CPU)");
+    printf("  发送模式: %s\n", config.use_copy_mode ? "拷贝模式 (shm_communicator_publish_copy)" : "零拷贝模式 (shm_communicator_loan/send)");
+    printf("  数据类型: %d (0:dyn, 1:common, 2:large, 3:stream)\n", config.data_type);
     printf("  绑定 CPU 核心: %d\n", config.cpu_core_id);
     printf("  配置路径: %s\n", config.config_path);
 
@@ -209,40 +245,59 @@ int main(int argc, char** argv) {
         // 4. 对所有注册的发布者发送带有当前时间戳的 Payload (使用真零拷贝接口)
         for (int i = 0; i < config.pub_count; ++i) {
             uint64_t t1 = app_get_time_ns();
-            
-            void* sample_h = NULL;
-            void* payload = shm_communicator_loan_uninit(comm, config.pub_topics[i], config.payload_size, &sample_h);
-            
-            uint64_t t2 = app_get_time_ns();
-            
-            if (payload && sample_h) {
-                // 在 loan 成功后立即获取时间戳以保证精度
+            uint64_t t2, t3, t4;
+            bool success = false;
+
+            if (config.use_copy_mode) {
+                // 使用拷贝模式发送
+                uint64_t current_time_ns = app_get_time_ns();
+                // 暂时使用 dummy_data 的一部分或全部作为负载，并在开头填入时间戳
                 if (config.payload_size >= sizeof(uint64_t)) {
-                    uint64_t current_time_ns = app_get_time_ns();
-                    memcpy(payload, &current_time_ns, sizeof(uint64_t));
-                    
-                    // 如果有剩余空间，可以填充其他测试数据
-                    if (config.payload_size > sizeof(uint64_t)) {
-                        // memset((uint8_t*)payload + sizeof(uint64_t), 0, config.payload_size - sizeof(uint64_t));
-                    }
+                    memcpy(dummy_data, &current_time_ns, sizeof(uint64_t));
                 }
                 
-                uint64_t t3 = app_get_time_ns();
+                t2 = app_get_time_ns(); // 这里 t2 与 t1 几乎相同，仅为了保持打印逻辑一致
+                t3 = app_get_time_ns();
                 
-                // 执行零拷贝发送
-                shm_communicator_send(comm, config.pub_topics[i], sample_h);
+                success = shm_communicator_publish_copy(comm, config.pub_topics[i], dummy_data, config.payload_size);
                 
-                uint64_t t4 = app_get_time_ns();
+                t4 = app_get_time_ns();
+            } else {
+                // 使用零拷贝模式发送
+                void* sample_h = NULL;
+                void* payload = shm_communicator_loan_uninit(comm, config.pub_topics[i], config.payload_size, &sample_h);
                 
-                // 显式触发下一次的预借用 (放在耗时统计之后，以免影响测量结果)
-                shm_communicator_ensure_pre_loan(comm, config.pub_topics[i]);
+                t2 = app_get_time_ns();
+                
+                if (payload && sample_h) {
+                    if (config.payload_size >= sizeof(uint64_t)) {
+                        uint64_t current_time_ns = app_get_time_ns();
+                        memcpy(payload, &current_time_ns, sizeof(uint64_t));
+                    }
+                    
+                    t3 = app_get_time_ns();
+                    
+                    success = shm_communicator_send(comm, config.pub_topics[i], sample_h);
+                    
+                    t4 = app_get_time_ns();
+                    
+                    shm_communicator_ensure_pre_loan(comm, config.pub_topics[i]);
+                }
+            }
 
+            if (success) {
                 // 打印各项操作耗时
-                printf("[%s] 发送统计: loan: %.2f us, copy: %.2f us, send: %.2f us\n",
-                       config.pub_topics[i],
-                       (t2 - t1) / 1000.0,
-                       (t3 - t2) / 1000.0,
-                       (t4 - t3) / 1000.0);
+                if (config.use_copy_mode) {
+                    printf("[%s] 发送统计 (Copy Mode): total: %.2f us\n",
+                           config.pub_topics[i],
+                           (t4 - t1) / 1000.0);
+                } else {
+                    printf("[%s] 发送统计 (Zero Copy): loan: %.2f us, copy: %.2f us, send: %.2f us\n",
+                           config.pub_topics[i],
+                           (t2 - t1) / 1000.0,
+                           (t3 - t2) / 1000.0,
+                           (t4 - t3) / 1000.0);
+                }
             }
         }
 
