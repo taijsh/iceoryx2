@@ -73,13 +73,14 @@ static uint64_t get_current_time_ms(void) {
 }
 
 #define MAX_TOPICS 32
+#define MAX_GRACE_ROUNDS 256  // 发现无数据后额外空转轮询的次数
 
 typedef struct shm_communicator_t shm_communicator_t;
 typedef struct PublisherEntry PublisherEntry;
 typedef struct SubscriberEntry SubscriberEntry;
 
 static bool shm_communicator_ensure_pre_loan_internal(PublisherEntry* entry);
-static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry, bool clear_events);
+static bool process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry, bool clear_events);
 
 // 发布者封装
 typedef struct PublisherEntry {
@@ -630,10 +631,13 @@ bool shm_communicator_ensure_pre_loan(shm_communicator_t* comm, const char* topi
     return shm_communicator_ensure_pre_loan_internal(entry);
 }
 
-static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry, bool clear_events) {
-    if (!entry || entry->subscriber == NULL) return;
+static bool process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* entry, bool clear_events) {
+    if (!entry || entry->subscriber == NULL) return false;
+    
+    bool received_any = false;
     if (clear_events && entry->listener) {
         iox2_event_id_t event_id; bool has_received = false;
+        // 清除所有积压的事件标志，防止 WaitSet 重复唤醒
         do { has_received = false; iox2_listener_try_wait_one(&entry->listener, &event_id, &has_received); } while (has_received);
     }
 
@@ -642,6 +646,7 @@ static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* 
         has_samples = false; iox2_sample_h sample = NULL;
         if (iox2_subscriber_receive(&entry->subscriber, NULL, &sample) == IOX2_OK && sample != NULL) {
             has_samples = true;
+            received_any = true;
             const uint8_t* payload = NULL; c_size_t num_elements = 0;
             iox2_sample_payload(&sample, (const void**) &payload, &num_elements);
             if (comm->user_callback && !entry->marked_for_unregistration) {
@@ -659,17 +664,47 @@ static void process_subscriber_entry(shm_communicator_t* comm, SubscriberEntry* 
             iox2_sample_drop(sample);
         }
     } while (has_samples);
+
+    return received_any;
+}
+
+// 尝试“排干”所有活跃订阅者的数据，并包含“优雅期”空转优化
+static bool shm_communicator_drain_all_subscribers(shm_communicator_t* comm) {
+    bool overall_received = false;
+    int empty_rounds = 0;
+
+    // 只要还在产生数据，或者还在“优雅期”循环内，就继续轮询
+    while (empty_rounds < MAX_GRACE_ROUNDS) {
+        bool round_received = false;
+        for (int i = 0; i < MAX_TOPICS; ++i) {
+            if (comm->subscribers[i].topic[0] != '\0') {
+                // WaitSet 模式下，即便不是由它唤醒，也顺便检查数据 (机会主义轮询)
+                // 传入 clear_events=true 确保状态位清零
+                if (process_subscriber_entry(comm, &comm->subscribers[i], true)) {
+                    round_received = true;
+                }
+            }
+        }
+
+        if (round_received) {
+            overall_received = true;
+            empty_rounds = 0; // 只要有数据，重置优雅期计数
+        } else {
+            empty_rounds++;
+        }
+        
+        // 如果不是在忙等待模式，我们可以稍微让出一点 CPU 给其他线程
+        if (!comm->enable_waitset && !round_received) break;
+    }
+    
+    return overall_received;
 }
 
 static iox2_callback_progression_e waitset_on_event(iox2_waitset_attachment_id_h attachment_id, void* context) {
     shm_communicator_t* comm = (shm_communicator_t*)context;
-    for (int i = 0; i < MAX_TOPICS; ++i) {
-        if (comm->subscribers[i].topic[0] != '\0' && comm->subscribers[i].guard != NULL) {
-            if (iox2_waitset_attachment_id_has_event_from(&attachment_id, &comm->subscribers[i].guard)) {
-                process_subscriber_entry(comm, &comm->subscribers[i], true);
-            }
-        }
-    }
+    // 当 WaitSet 唤醒时，不论是哪个服务触发的，我们直接执行全局“排水”逻辑
+    // 这样可以一次性处理所有并发到达的消息，减少系统调用
+    shm_communicator_drain_all_subscribers(comm);
     return iox2_callback_progression_e_CONTINUE;
 }
 
@@ -698,7 +733,8 @@ static void shm_communicator_gc_internal(shm_communicator_t* comm) {
     for (int i = 0; i < MAX_TOPICS; ++i) {
         SubscriberEntry* entry = &comm->subscribers[i];
         if (entry->topic[0] != '\0') {
-            process_subscriber_entry(comm, entry, false);
+            // GC 时顺便取数，注意传入 clear_events=true 避免冗余唤醒
+            process_subscriber_entry(comm, entry, true);
             if (entry->marked_for_unregistration) {
                 size_t remote_pubs = iox2_port_factory_pub_sub_dynamic_config_number_of_publishers(&entry->service);
                 if (remote_pubs == 0) {
@@ -727,8 +763,15 @@ static void* receiver_thread_func(void* arg) {
         if (comm->enable_waitset) {
             iox2_waitset_run_result_e res;
             iox2_waitset_wait_and_process_once_with_timeout(&comm->waitset, waitset_on_event, comm, 0, 10000000, &res);
+            // 唤醒并执行完回调后，再次进行一次“由于可能有新数据到来而进行的全局排水”
+            shm_communicator_drain_all_subscribers(comm);
             shm_communicator_gc_internal(comm);
-        } else { shm_communicator_poll_internal(comm); sched_yield(); }
+        } else {
+            // 轮询模式下，直接调用具备优雅期优化的排水函数
+            shm_communicator_drain_all_subscribers(comm);
+            shm_communicator_gc_internal(comm);
+            sched_yield(); 
+        }
     }
     return NULL;
 }
