@@ -10,6 +10,21 @@ extern "C" {
 #endif
 
 /**
+ * @brief 共享内存通信器句柄
+ */
+typedef struct shm_communicator_t shm_communicator_t;
+
+/**
+ * @brief 接收数据时的回调函数类型
+ * 
+ * @param topic 收到数据对应的主题
+ * @param data 接收到的数据指针
+ * @param size 数据大小
+ * @param user_context 用户上下文指针
+ */
+typedef void (*on_receive_cb)(const char* topic, const void* data, size_t size, void* user_context);
+
+/**
  * @brief 创建共享内存通信器实例
  * 
  * @return shm_communicator_t* 指向新创建的通信器实例的指针；失败时返回 NULL。
@@ -140,6 +155,20 @@ bool shm_communicator_publish(shm_communicator_t* comm, const char* topic, const
  * @note 相比于 publish，此函数利用底层直接拷贝接口，在某些场景下效率更高。
  */
 bool shm_communicator_publish_copy(shm_communicator_t* comm, const char* topic, const void* data, size_t size);
+
+/**
+ * @brief 批量发布多个数据块到指定主题
+ * 
+ * @param comm 通信器指针
+ * @param topic 主题名称
+ * @param data_blocks 数据块指针数组
+ * @param block_sizes 各数据块的大小数组
+ * @param block_count 数据块数量
+ * @return true 发送成功
+ * 
+ * @note 多个数据块将依次连续写入共享内存负荷区。
+ */
+bool shm_communicator_publish_multi(shm_communicator_t* comm, const char* topic, const void* const data_blocks[], const size_t block_sizes[], size_t block_count);
 
 // 优化后的零拷贝接口 (Optimized Zero-Copy API)
 

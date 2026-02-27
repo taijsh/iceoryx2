@@ -75,7 +75,6 @@ static uint64_t get_current_time_ms(void) {
 #define MAX_TOPICS 32
 #define MAX_GRACE_ROUNDS 256  // 发现无数据后额外空转轮询的次数
 
-typedef struct shm_communicator_t shm_communicator_t;
 typedef struct PublisherEntry PublisherEntry;
 typedef struct SubscriberEntry SubscriberEntry;
 
@@ -455,6 +454,58 @@ bool shm_communicator_publish(shm_communicator_t* comm, const char* topic, const
 
     if (payload) {
         memcpy(payload, data, size);
+        success = shm_communicator_send(comm, topic, sample_h);
+        if (success) {
+            shm_communicator_ensure_pre_loan(comm, topic);
+        }
+    }
+
+    pthread_mutex_lock(&comm->mutex);
+    entry->ref_count--;
+    pthread_mutex_unlock(&comm->mutex);
+
+    return success;
+}
+
+bool shm_communicator_publish_multi(shm_communicator_t* comm, const char* topic, const void* const data_blocks[], const size_t block_sizes[], size_t block_count) {
+    if (!comm || !data_blocks || !block_sizes || block_count == 0) return false;
+
+    PublisherEntry* entry = NULL;
+    pthread_mutex_lock(&comm->mutex);
+    for (int i = 0; i < MAX_TOPICS; ++i) {
+        if (strcmp(comm->publishers[i].topic, topic) == 0 && comm->publishers[i].topic[0] != '\0') {
+            entry = &comm->publishers[i];
+            entry->ref_count++;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&comm->mutex);
+
+    if (!entry) return false;
+
+    // 1. 计算总大小
+    size_t total_size = 0;
+    for (size_t i = 0; i < block_count; ++i) {
+        total_size += block_sizes[i];
+    }
+
+    // 2. 借用样本
+    void* sample_h = NULL;
+    void* payload = shm_communicator_loan_uninit(comm, topic, total_size, &sample_h);
+    bool success = false;
+
+    if (payload) {
+        // 3. 依次写入数据块
+        size_t offset = 0;
+        uint8_t* payload_ptr = (uint8_t*)payload;
+        for (size_t i = 0; i < block_count; ++i) {
+            if (data_blocks[i] && block_sizes[i] > 0) {
+                memcpy(payload_ptr + offset, data_blocks[i], block_sizes[i]);
+                offset += block_sizes[i];
+            }
+        }
+        
+        // 4. 发送
         success = shm_communicator_send(comm, topic, sample_h);
         if (success) {
             shm_communicator_ensure_pre_loan(comm, topic);

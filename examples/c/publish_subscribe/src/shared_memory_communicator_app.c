@@ -68,6 +68,7 @@ typedef struct {
     bool use_copy_mode;
     shm_data_type_e data_type;
     char config_path[1024];
+    bool use_multi_mode;
 } AppConfig;
 
 void print_help() {
@@ -79,7 +80,7 @@ void print_help() {
     printf("  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n");
     printf("  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n");
     printf("  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n");
-    printf("  --mode <zero|copy>  发送模式: zero 为零拷贝, copy 为拷贝模式 (默认: zero)\n");
+    printf("  --mode <zero|copy|multi> 发送模式: zero 为零拷贝, copy 为拷贝模式, multi 为多块发布模式 (默认: zero)\n");
     printf("  --type <dyn|common|large|stream> 数据类型 (默认: dyn)\n");
     printf("  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n");
     printf("  --help              显示本帮助信息\n");
@@ -141,11 +142,17 @@ AppConfig parse_args(int argc, char** argv) {
             }
         } else if (strcmp(argv[i], "--mode") == 0) {
             if (i + 1 < argc) {
-                if (strcmp(argv[++i], "copy") == 0) {
+                if (strcmp(argv[i+1], "copy") == 0) {
                     config.use_copy_mode = true;
+                    config.use_multi_mode = false;
+                } else if (strcmp(argv[i+1], "multi") == 0) {
+                    config.use_copy_mode = false;
+                    config.use_multi_mode = true;
                 } else {
                     config.use_copy_mode = false;
+                    config.use_multi_mode = false;
                 }
+                i++;
             } else {
                 fprintf(stderr, "错误: --mode 需要指定 zero 或 copy\n");
                 exit(1);
@@ -262,6 +269,25 @@ int main(int argc, char** argv) {
                 success = shm_communicator_publish_copy(comm, config.pub_topics[i], dummy_data, config.payload_size);
                 
                 t4 = app_get_time_ns();
+            } else if (config.use_multi_mode) {
+                // 使用多块发布模式
+                uint64_t current_time_ns = app_get_time_ns();
+                
+                const void* blocks[2];
+                size_t sizes[2];
+                
+                blocks[0] = &current_time_ns;
+                sizes[0] = sizeof(uint64_t);
+                
+                blocks[1] = dummy_data;
+                sizes[1] = (config.payload_size > sizeof(uint64_t)) ? (config.payload_size - sizeof(uint64_t)) : 0;
+                
+                t2 = app_get_time_ns(); // 借用前耗时
+                t3 = app_get_time_ns(); // 填充/准备耗时
+                
+                success = shm_communicator_publish_multi(comm, config.pub_topics[i], blocks, sizes, sizes[1] > 0 ? 2 : 1);
+                
+                t4 = app_get_time_ns();
             } else {
                 // 使用零拷贝模式发送
                 void* sample_h = NULL;
@@ -289,6 +315,10 @@ int main(int argc, char** argv) {
                 // 打印各项操作耗时
                 if (config.use_copy_mode) {
                     printf("[%s] 发送统计 (Copy Mode): total: %.2f us\n",
+                           config.pub_topics[i],
+                           (t4 - t1) / 1000.0);
+                } else if (config.use_multi_mode) {
+                    printf("[%s] 发送统计 (Multi Mode): total: %.2f us\n",
                            config.pub_topics[i],
                            (t4 - t1) / 1000.0);
                 } else {

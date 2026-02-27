@@ -44,3 +44,15 @@ target_link_libraries(shm_stress_test shm_communicator)
 # 新增吞吐量测试程序
 add_executable(shm_throughput_test src/shm_throughput_test.cpp)
 target_link_libraries(shm_throughput_test shm_communicator)
+
+# ======= C++ 类封装及其测试程序 =======
+
+# 编译 C++ 封装类为动态库 (.so/.dll)
+add_library(shm_communicator_cxx SHARED src/SharedMemoryCommunicator.cpp)
+# 链接 shm_communicator 动态库
+target_link_libraries(shm_communicator_cxx shm_communicator)
+
+# 编译 C++ 封装类的专用测试用例
+add_executable(SharedMemoryCommunicatorTest src/SharedMemoryCommunicatorTest.cpp)
+# 链接 SharedMemoryCommunicator 动态库
+target_link_libraries(SharedMemoryCommunicatorTest shm_communicator_cxx)

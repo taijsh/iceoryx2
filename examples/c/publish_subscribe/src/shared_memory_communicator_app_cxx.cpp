@@ -72,6 +72,7 @@ struct AppConfig {
     int cpu_core_id = -1;
     bool enable_waitset = true;
     bool use_copy_mode = false;
+    bool use_multi_mode = false;
     shm_data_type_e data_type = SHM_DATA_DYNAMIC;
     std::string config_path = "/home/taijsh/ljtx/ljtx_component.toml";
 };
@@ -84,7 +85,7 @@ void print_help() {
               << "  --size <bytes>      负载大小字节数 (默认: 1024)\n"
               << "  --interval <ms>     发布间隔毫秒数 (默认: 1000)\n"
               << "  --waitset <0|1>     是否启用系统级 WaitSet 事件驱动机制 (默认: 1)\n"
-              << "  --mode <zero|copy>  发送模式: zero 为零拷贝, copy 为拷贝模式 (默认: zero)\n"
+              << "  --mode <zero|copy|multi>  发送模式: zero 为零拷贝, copy 为拷贝模式, multi 为多块发布模式 (默认: zero)\n"
               << "  --cpu <id>          绑定接收线程到指定 CPU 核心 (默认: -1 不绑定)\n"
               << "  --type <dyn|common|large|stream> 数据类型 (默认: dyn)\n"
               << "  --config <path>     配置文件路径 (默认: /home/taijsh/ljtx/ljtx_component.toml)\n"
@@ -140,12 +141,18 @@ AppConfig parse_args(int argc, char** argv) {
             }
         } else if (arg == "--mode") {
             if (i + 1 < argc) {
-                std::string mode = argv[++i];
+                std::string mode = argv[i+1];
                 if (mode == "copy") {
                     config.use_copy_mode = true;
+                    config.use_multi_mode = false;
+                } else if (mode == "multi") {
+                    config.use_copy_mode = false;
+                    config.use_multi_mode = true;
                 } else {
                     config.use_copy_mode = false;
+                    config.use_multi_mode = false;
                 }
+                i++;
             } else {
                 std::cerr << "错误: --mode 需要指定 zero 或 copy\n";
                 std::exit(1);
@@ -265,6 +272,25 @@ int main(int argc, char** argv) {
                 success = shm_communicator_publish_copy(comm, topic.c_str(), dummy_data.data(), config.payload_size);
                 
                 t4 = app_get_steady_ns();
+            } else if (config.use_multi_mode) {
+                // 使用多块发布模式
+                uint64_t current_time_ns = app_get_time_ns();
+                
+                const void* blocks[2];
+                size_t sizes[2];
+                
+                blocks[0] = &current_time_ns;
+                sizes[0] = sizeof(uint64_t);
+                
+                blocks[1] = dummy_data.data();
+                sizes[1] = (config.payload_size > sizeof(uint64_t)) ? (config.payload_size - sizeof(uint64_t)) : 0;
+                
+                t2 = app_get_steady_ns();
+                t3 = app_get_steady_ns();
+                
+                success = shm_communicator_publish_multi(comm, topic.c_str(), blocks, sizes, sizes[1] > 0 ? 2 : 1);
+                
+                t4 = app_get_steady_ns();
             } else {
                 // 使用零拷贝模式发送
                 void* sample_h = nullptr;
@@ -292,6 +318,9 @@ int main(int argc, char** argv) {
                 // 打印各项操作耗时
                 if (config.use_copy_mode) {
                     std::cout << "[" << topic << "] 发送统计 (Copy Mode): total: " 
+                              << std::fixed << std::setprecision(2) << (t4 - t1) / 1000.0 << " us" << std::endl;
+                } else if (config.use_multi_mode) {
+                    std::cout << "[" << topic << "] 发送统计 (Multi Mode): total: " 
                               << std::fixed << std::setprecision(2) << (t4 - t1) / 1000.0 << " us" << std::endl;
                 } else {
                     std::cout << "[" << topic << "] 发送统计 (Zero Copy): loan: " 
